@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; }
+        .safe { color: green; }
+        .unsafe { color: red; }
+        .review { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Scan Results for {{ package }}</h1>
+    <h2 class="{{ verdict.lower() }}">{{ verdict }}</h2>
+    <p><strong>Ecosystem:</strong> {{ ecosystem }}</p>
+    {% if reasons %}
+    <h3>Findings:</h3>
+    <ul>
+    {% for reason in reasons %}
+        <li>{{ reason }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+    <a href="/">Back</a>
+</body>
+</html>
