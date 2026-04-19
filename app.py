@@ -3,15 +3,19 @@ import requests
 from datetime import datetime, timedelta
 from functools import lru_cache
 import json
+import logging
 
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 OSV_API = "https://api.osv.dev/v1/query"
 PYPI_API = "https://pypi.org/pypi/{package}/json"
 
 # Popular packages to display on dashboard
 POPULAR_PACKAGES = [
-    "flask", "django", "requests", "numpy", "pandas", 
+    "flask", "django", "requests", "numpy", "pandas",
     "sqlalchemy", "celery", "pytest", "beautifulsoup4", "pillow"
 ]
 
@@ -19,14 +23,22 @@ def fetch_osv(package, ecosystem="PyPI", version=None):
     payload = {"package": {"name": package, "ecosystem": ecosystem}}
     if version:
         payload["version"] = version
-    r = requests.post(OSV_API, json=payload, timeout=10)
-    r.raise_for_status()
-    return r.json().get("vulns", [])
+    try:
+        r = requests.post(OSV_API, json=payload, timeout=10)
+        r.raise_for_status()
+        return r.json().get("vulns", [])
+    except requests.exceptions.RequestException as e:
+        logging.error(f"OSV API error for {package}: {e}")
+        return []
 
 def fetch_pypi_meta(package):
-    r = requests.get(PYPI_API.format(package=package), timeout=10)
-    if r.status_code != 200:
+    try:
+        r = requests.get(PYPI_API.format(package=package), timeout=10)
+        r.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logging.error(f"PyPI API error for {package}: {e}")
         return None
+
     data = r.json()
     info = data.get("info", {})
     releases = data.get("releases", {})
@@ -36,7 +48,7 @@ def fetch_pypi_meta(package):
             for f in files:
                 upload_time = f.get("upload_time_iso_8601")
                 if upload_time:
-                    dt = datetime.fromisoformat(upload_time.replace("Z","+00:00"))
+                    dt = datetime.fromisoformat(upload_time.replace("Z", "+00:00"))
                     if not latest_release_date or dt > latest_release_date:
                         latest_release_date = dt
     return {
@@ -53,7 +65,10 @@ def cvss_severity(v):
     sev = "UNKNOWN"
     for s in v.get("severity", []):
         if s.get("type") == "CVSS_V3":
-            score = float(s.get("score", 0))
+            try:
+                score = float(s.get("score", 0))
+            except ValueError:
+                score = 0
             if score >= 9.0: sev = "CRITICAL"
             elif score >= 7.0: sev = "HIGH"
             elif score >= 4.0: sev = "MEDIUM"
@@ -98,14 +113,14 @@ def get_package_info(package):
         meta = fetch_pypi_meta(package)
         vulns = fetch_osv(package, "PyPI")
         verdict, reasons = compute_verdict(meta or {}, vulns)
-        
+
         vuln_counts = {
             "CRITICAL": sum(1 for v in vulns if cvss_severity(v) == "CRITICAL"),
             "HIGH": sum(1 for v in vulns if cvss_severity(v) == "HIGH"),
             "MEDIUM": sum(1 for v in vulns if cvss_severity(v) == "MEDIUM"),
             "LOW": sum(1 for v in vulns if cvss_severity(v) == "LOW"),
         }
-        
+
         return {
             "name": package,
             "version": meta.get("version") if meta else "N/A",
@@ -114,7 +129,8 @@ def get_package_info(package):
             "verdict": verdict,
             "last_updated": str(meta.get("latest_release_date")) if meta and meta.get("latest_release_date") else "Unknown"
         }
-    except:
+    except Exception as e:
+        logging.error(f"Error fetching package info for {package}: {e}")
         return {
             "name": package,
             "version": "N/A",
@@ -134,10 +150,13 @@ def search():
     ecosystem = request.form.get("ecosystem") or "PyPI"
     version = request.form.get("version") or None
 
-    meta = fetch_pypi_meta(package) if ecosystem == "PyPI" else {"name": package}
-    vulns = fetch_osv(package, ecosystem, version)
-
-    verdict, reasons = compute_verdict(meta or {}, vulns)
+    try:
+        meta = fetch_pypi_meta(package) if ecosystem == "PyPI" else {"name": package}
+        vulns = fetch_osv(package, ecosystem, version)
+        verdict, reasons = compute_verdict(meta or {}, vulns)
+    except Exception as e:
+        logging.error(f"Search error: {e}")
+        return render_template("error.html", message=str(e))
 
     return render_template("results.html",
                            package=package,
@@ -159,4 +178,5 @@ def api_packages():
     return json.dumps(packages)
 
 if __name__ == "__main__":
+    # For production, run with Gunicorn: gunicorn -w 4 app:app
     app.run(debug=True)
