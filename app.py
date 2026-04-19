@@ -1,18 +1,10 @@
-from flask import Flask, render_template, request
+import os
+import logging
+import json
 import requests
 from datetime import datetime, timedelta
 from functools import lru_cache
-import json
-import logging
-
-import os
 from flask import Flask, render_template, request
-# ... keep the rest of your code as we hardened earlier ...
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Railway provides PORT
-    app.run(host="0.0.0.0", port=port)
-
 
 app = Flask(__name__)
 
@@ -117,7 +109,6 @@ def compute_verdict(meta, vulns):
 
 @lru_cache(maxsize=100)
 def get_package_info(package):
-    """Fetch package info with caching"""
     try:
         meta = fetch_pypi_meta(package)
         vulns = fetch_osv(package, "PyPI")
@@ -187,5 +178,5 @@ def api_packages():
     return json.dumps(packages)
 
 if __name__ == "__main__":
-    # For production, run with Gunicorn: gunicorn -w 4 app:app
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
