@@ -1,25 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Safety Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: Arial; max-width: 800px; margin: 50px auto; }
-        form { background: #f5f5f5; padding: 20px; border-radius: 8px; }
-        input, select { padding: 10px; margin: 10px 0; width: 100%; }
-        button { background: #667eea; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        .badge-critical { @apply bg-red-100 text-red-800; }
+        .badge-high { @apply bg-orange-100 text-orange-800; }
+        .badge-medium { @apply bg-yellow-100 text-yellow-800; }
+        .badge-low { @apply bg-green-100 text-green-800; }
+        .badge-safe { @apply bg-green-100 text-green-800; }
+        .badge-unsafe { @apply bg-red-100 text-red-800; }
+        .badge-review { @apply bg-yellow-100 text-yellow-800; }
     </style>
 </head>
-<body>
-    <h1>📚 Library Safety Checker</h1>
-    <form action="/search" method="POST">
-        <input type="text" name="package" placeholder="Package name (e.g., flask)" required>
-        <select name="ecosystem">
-            <option>PyPI</option>
-            <option>npm</option>
-            <option>Maven</option>
-        </select>
-        <input type="text" name="version" placeholder="Version (optional)">
-        <button type="submit">Check Library</button>
-    </form>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-white min-h-screen">
+    <nav class="bg-slate-950 border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">📚 Library Safety Checker</h1>
+            <a href="/dashboard" class="text-blue-400 hover:text-blue-300">View Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 py-12">
+        <div class="bg-slate-800 rounded-lg shadow-xl p-8 border border-slate-700">
+            <h2 class="text-3xl font-bold mb-2">Check Library Safety</h2>
+            <p class="text-slate-400 mb-8">Scan your dependencies for vulnerabilities, license issues, and maintenance status</p>
+            
+            <form action="/search" method="POST" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Package Name *</label>
+                        <input type="text" name="package" placeholder="e.g., flask, django, requests" 
+                               class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Ecosystem</label>
+                        <select name="ecosystem" class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                            <option>PyPI</option>
+                            <option>npm</option>
+                            <option>Maven</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-2">Version (Optional)</label>
+                    <input type="text" name="version" placeholder="e.g., 2.3.3" 
+                           class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500">
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
+                    🔍 Check Library
+                </button>
+            </form>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+                <div class="text-3xl mb-2">🛡️</div>
+                <h3 class="font-bold mb-2">Vulnerability Detection</h3>
+                <p class="text-slate-400 text-sm">Scan for known CVEs and security issues</p>
+            </div>
+            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+                <div class="text-3xl mb-2">⚖️</div>
+                <h3 class="font-bold mb-2">License Compliance</h3>
+                <p class="text-slate-400 text-sm">Check license compatibility with your policies</p>
+            </div>
+            <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+                <div class="text-3xl mb-2">📈</div>
+                <h3 class="font-bold mb-2">Maintenance Status</h3>
+                <p class="text-slate-400 text-sm">Track active development and updates</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
