@@ -1,26 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Results</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Library Safety Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: Arial; max-width: 800px; margin: 50px auto; }
-        .safe { color: green; }
-        .unsafe { color: red; }
-        .review { color: orange; }
+        .badge-critical { @apply bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold; }
+        .badge-high { @apply bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold; }
+        .badge-medium { @apply bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold; }
+        .badge-low { @apply bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold; }
+        .badge-safe { @apply bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold; }
+        .badge-unsafe { @apply bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold; }
+        .badge-review { @apply bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold; }
     </style>
 </head>
-<body>
-    <h1>Scan Results for {{ package }}</h1>
-    <h2 class="{{ verdict.lower() }}">{{ verdict }}</h2>
-    <p><strong>Ecosystem:</strong> {{ ecosystem }}</p>
-    {% if reasons %}
-    <h3>Findings:</h3>
-    <ul>
-    {% for reason in reasons %}
-        <li>{{ reason }}</li>
-    {% endfor %}
-    </ul>
-    {% endif %}
-    <a href="/">Back</a>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 text-white min-h-screen">
+    <nav class="bg-slate-950 border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">📚 Library Safety Checker</h1>
+            <div class="space-x-4">
+                <a href="/" class="text-blue-400 hover:text-blue-300">Check Package</a>
+                <a href="/dashboard" class="text-blue-400 hover:text-blue-300">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 py-12">
+        <div class="bg-slate-800 rounded-lg border border-slate-700 p-8 mb-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h1 class="text-4xl font-bold">{{ package }}</h1>
+                    <p class="text-slate-400">Ecosystem: {{ ecosystem }}</p>
+                </div>
+                <span class="badge-{{ verdict.lower() }} text-lg">{{ verdict }}</span>
+            </div>
+
+            {% if reasons %}
+            <div class="bg-slate-700 rounded-lg p-4 mb-6">
+                <h3 class="font-bold mb-3">⚠️ Findings</h3>
+                <ul class="space-y-2">
+                {% for reason in reasons %}
+                    <li class="flex items-start">
+                        <span class="mr-3">•</span>
+                        <span>{{ reason }}</span>
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if meta and meta.name %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <p class="text-slate-400 text-sm mb-1">Version</p>
+                    <p class="text-lg font-semibold">{{ meta.version or 'N/A' }}</p>
+                </div>
+                <div>
+                    <p class="text-slate-400 text-sm mb-1">License</p>
+                    <p class="text-lg font-semibold">{{ meta.license or 'Unknown' }}</p>
+                </div>
+                <div>
+                    <p class="text-slate-400 text-sm mb-1">Last Updated</p>
+                    <p class="text-lg font-semibold">{{ meta.latest_release_date or 'Unknown' }}</p>
+                </div>
+                {% if meta.home_page %}
+                <div>
+                    <p class="text-slate-400 text-sm mb-1">Homepage</p>
+                    <a href="{{ meta.home_page }}" target="_blank" class="text-blue-400 hover:text-blue-300">Visit</a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if vulns %}
+        <div class="bg-slate-800 rounded-lg border border-slate-700 p-8 mb-8">
+            <h2 class="text-2xl font-bold mb-6">🔴 Vulnerabilities ({{ vulns|length }})</h2>
+            <div class="space-y-4">
+            {% for vuln in vulns %}
+                <div class="bg-slate-700 rounded-lg p-4 border-l-4 border-red-500">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold">{{ vuln.id }}</h3>
+                        <span class="badge-{{ vuln.severity|default('low')|lower }}">{{ vuln.severity|default('Unknown') }}</span>
+                    </div>
+                    <p class="text-slate-300 text-sm mb-3">{{ vuln.summary or vuln.details or 'No description available' }}</p>
+                    {% if vuln.affected %}
+                    <p class="text-xs text-slate-400">Affected versions: {{ vuln.affected|join(', ') }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-slate-800 rounded-lg border border-slate-700 p-8 mb-8">
+            <p class="text-center text-slate-400">✓ No known vulnerabilities found</p>
+        </div>
+        {% endif %}
+
+        <div class="flex gap-4">
+            <a href="/" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition text-center">
+                ← Check Another Package
+            </a>
+            <a href="/dashboard" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg transition text-center">
+                View Dashboard →
+            </a>
+        </div>
+    </div>
 </body>
 </html>
