@@ -1,11 +1,11 @@
-from functools import lru_cache
-import json
+Imports
+app = Flask(__name__)
+API constants
+Function definitions (fetch_osv, fetch_pypi_meta, etc.)
+NEW: get_package_info function
+Routes (@app.route decorators and functions)
+if __name__ == "__main__":
 
-# Popular packages to display on dashboard
-POPULAR_PACKAGES = [
-    "flask", "django", "requests", "numpy", "pandas", 
-    "sqlalchemy", "celery", "pytest", "beautifulsoup4", "pillow"
-]
 
 @lru_cache(maxsize=100)
 def get_package_info(package):
