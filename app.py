@@ -104,16 +104,50 @@ def fetch_github_data(repo_url):
         return None
 
 def cvss_severity(v):
+    """Extract severity from vulnerability data"""
     sev = "UNKNOWN"
+    
+    # Check severity array first
     for s in v.get("severity", []):
         if s.get("type") == "CVSS_V3":
-            score = float(s.get("score", 0))
-            if score >= 9.0: sev = "CRITICAL"
-            elif score >= 7.0: sev = "HIGH"
-            elif score >= 4.0: sev = "MEDIUM"
-            else: sev = "LOW"
+            try:
+                score = float(s.get("score", 0))
+                if score >= 9.0: 
+                    sev = "CRITICAL"
+                elif score >= 7.0: 
+                    sev = "HIGH"
+                elif score >= 4.0: 
+                    sev = "MEDIUM"
+                else: 
+                    sev = "LOW"
+                break
+            except (ValueError, TypeError):
+                continue
+    
+    # Fallback: try to extract from CVSS string in affected field
+    if sev == "UNKNOWN":
+        affected = v.get("affected", [])
+        for item in affected:
+            cvss_str = item.get("ecosystem_specific", {}).get("severity")
+            if cvss_str and isinstance(cvss_str, str):
+                # Parse "CVSS:3.1/AV:N/AC:L/..." format
+                try:
+                    # Extract numeric score if present
+                    if "CVSS:" in cvss_str:
+                        parts = cvss_str.split("/")
+                        if parts:
+                            # Try to find score in first part
+                            score_part = parts[0].split(":")[-1]
+                            score = float(score_part)
+                            if score >= 9.0: sev = "CRITICAL"
+                            elif score >= 7.0: sev = "HIGH"
+                            elif score >= 4.0: sev = "MEDIUM"
+                            else: sev = "LOW"
+                            break
+                except (ValueError, IndexError, AttributeError):
+                    continue
+    
     return sev
-
 def compute_verdict(meta, vulns):
     reasons = []
     verdict = "Safe"
