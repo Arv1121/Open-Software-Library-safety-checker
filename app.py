@@ -1,22 +1,51 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
 from datetime import datetime, timedelta
 import json
 import logging
+from functools import wraps
+import hashlib
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-change-this'
 logging.basicConfig(level=logging.INFO)
+
+# In-memory stats (use Redis/DB in production)
+STATS = {
+    "unique_visitors": set(),
+    "total_searches": 0,
+    "searches_by_package": {},
+    "visitor_ips": []
+}
 
 OSV_API = "https://api.osv.dev/v1/query"
 PYPI_API = "https://pypi.org/pypi/{package}/json"
 DEPS_DEV_API = "https://api.deps.dev/v3/systems/pypi/packages/{package}"
 GITHUB_API = "https://api.github.com/repos/{owner}/{repo}"
-LIBRARIES_IO_API = "https://libraries.io/api/pypi/{package}"
 
 POPULAR_PACKAGES = [
     "flask", "django", "requests", "numpy", "pandas", 
     "sqlalchemy", "celery", "pytest", "beautifulsoup4", "pillow"
 ]
+
+def track_visitor(f):
+    """Decorator to track unique visitors"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Get visitor identifier (IP + User-Agent hash)
+        ip = request.remote_addr
+        user_agent = request.headers.get('User-Agent', '')
+        visitor_id = hashlib.md5(f"{ip}{user_agent}".encode()).hexdigest()
+        
+        STATS["unique_visitors"].add(visitor_id)
+        STATS["visitor_ips"].append({
+            "ip": ip,
+            "timestamp": datetime.utcnow().isoformat(),
+            "path": request.path
+        })
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 def fetch_osv(package, ecosystem="PyPI", version=None):
     try:
@@ -63,7 +92,6 @@ def fetch_pypi_meta(package):
         return None
 
 def fetch_deps_dev_data(package):
-    """Fetch SBOM and dependency info from deps.dev"""
     try:
         r = requests.get(DEPS_DEV_API.format(package=package), timeout=10)
         if r.status_code == 200:
@@ -78,12 +106,10 @@ def fetch_deps_dev_data(package):
         return {"dependencies": 0, "dependents": 0}
 
 def fetch_github_data(repo_url):
-    """Fetch GitHub repo stats"""
     try:
         if not repo_url or "github.com" not in repo_url:
             return None
         
-        # Parse owner/repo from URL
         parts = repo_url.rstrip("/").split("/")
         owner, repo = parts[-2], parts[-1].replace(".git", "")
         
@@ -107,7 +133,6 @@ def cvss_severity(v):
     """Extract severity from vulnerability data"""
     sev = "UNKNOWN"
     
-    # Check severity array first
     for s in v.get("severity", []):
         if s.get("type") == "CVSS_V3":
             try:
@@ -124,19 +149,15 @@ def cvss_severity(v):
             except (ValueError, TypeError):
                 continue
     
-    # Fallback: try to extract from CVSS string in affected field
     if sev == "UNKNOWN":
         affected = v.get("affected", [])
         for item in affected:
             cvss_str = item.get("ecosystem_specific", {}).get("severity")
             if cvss_str and isinstance(cvss_str, str):
-                # Parse "CVSS:3.1/AV:N/AC:L/..." format
                 try:
-                    # Extract numeric score if present
                     if "CVSS:" in cvss_str:
                         parts = cvss_str.split("/")
                         if parts:
-                            # Try to find score in first part
                             score_part = parts[0].split(":")[-1]
                             score = float(score_part)
                             if score >= 9.0: sev = "CRITICAL"
@@ -148,6 +169,7 @@ def cvss_severity(v):
                     continue
     
     return sev
+
 def compute_verdict(meta, vulns):
     reasons = []
     verdict = "Safe"
@@ -236,14 +258,24 @@ def get_package_info(package):
         }
 
 @app.route("/", methods=["GET"])
+@track_visitor
 def index():
-    return render_template("index.html")
+    stats = {
+        "unique_visitors": len(STATS["unique_visitors"]),
+        "total_searches": STATS["total_searches"]
+    }
+    return render_template("index.html", stats=stats)
 
 @app.route("/search", methods=["POST"])
+@track_visitor
 def search():
     package = request.form.get("package")
     ecosystem = request.form.get("ecosystem") or "PyPI"
     version = request.form.get("version") or None
+
+    # Track search
+    STATS["total_searches"] += 1
+    STATS["searches_by_package"][package] = STATS["searches_by_package"].get(package, 0) + 1
 
     try:
         meta = fetch_pypi_meta(package) if ecosystem == "PyPI" else {"name": package}
@@ -252,6 +284,12 @@ def search():
         github_data = fetch_github_data(meta.get("home_page") if meta else None)
 
         verdict, reasons = compute_verdict(meta or {}, vulns)
+
+        stats = {
+            "unique_visitors": len(STATS["unique_visitors"]),
+            "total_searches": STATS["total_searches"],
+            "package_searches": STATS["searches_by_package"].get(package, 0)
+        }
 
         return render_template("results.html",
                                package=package,
@@ -262,9 +300,15 @@ def search():
                                verdict=verdict,
                                reasons=reasons,
                                deps_data=deps_data,
-                               github_data=github_data)
+                               github_data=github_data,
+                               stats=stats)
     except Exception as e:
         logging.error(f"Search error: {e}")
+        stats = {
+            "unique_visitors": len(STATS["unique_visitors"]),
+            "total_searches": STATS["total_searches"],
+            "package_searches": STATS["searches_by_package"].get(package, 0)
+        }
         return render_template("results.html",
                                package=package,
                                ecosystem=ecosystem,
@@ -274,17 +318,36 @@ def search():
                                verdict="Error",
                                reasons=[str(e)],
                                deps_data={},
-                               github_data=None)
+                               github_data=None,
+                               stats=stats)
 
 @app.route("/dashboard")
+@track_visitor
 def dashboard():
     packages = [get_package_info(pkg) for pkg in POPULAR_PACKAGES]
-    return render_template("dashboard.html", packages=packages)
+    stats = {
+        "unique_visitors": len(STATS["unique_visitors"]),
+        "total_searches": STATS["total_searches"]
+    }
+    return render_template("dashboard.html", packages=packages, stats=stats)
 
 @app.route("/api/packages")
 def api_packages():
     packages = [get_package_info(pkg) for pkg in POPULAR_PACKAGES]
-    return json.dumps(packages)
+    return jsonify(packages)
+
+@app.route("/api/stats")
+def api_stats():
+    return jsonify({
+        "unique_visitors": len(STATS["unique_visitors"]),
+        "total_searches": STATS["total_searches"],
+        "top_packages": sorted(STATS["searches_by_package"].items(), key=lambda x: x[1], reverse=True)[:10]
+    })
+
+@app.route("/terms")
+@track_visitor
+def terms():
+    return render_template("terms.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
