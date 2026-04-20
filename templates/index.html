@@ -117,5 +117,34 @@
         
         loadRecent();
     </script>
+
+<!-- Add this to the footer section before closing body tag -->
+<footer class="bg-slate-800/50 backdrop-blur border-t border-slate-700 mt-16">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <!-- Stats -->
+            <div class="text-center">
+                <p class="text-3xl font-bold text-blue-400">{{ stats.unique_visitors }}</p>
+                <p class="text-slate-400">Unique Visitors</p>
+            </div>
+            <div class="text-center">
+                <p class="text-3xl font-bold text-purple-400">{{ stats.total_searches }}</p>
+                <p class="text-slate-400">Total Searches</p>
+            </div>
+            <div class="text-center">
+                <p class="text-3xl font-bold text-green-400">{{ POPULAR_PACKAGES|length }}</p>
+                <p class="text-slate-400">Packages Tracked</p>
+            </div>
+        </div>
+        
+        <div class="border-t border-slate-600 pt-8 flex justify-between items-center">
+            <p class="text-slate-400">© 2026 Library Safety Checker. All rights reserved.</p>
+            <div class="flex gap-6">
+                <a href="/terms" class="text-slate-400 hover:text-white transition">Terms & Conditions</a>
+                <a href="https://github.com/Arv1121/ibrary-safety-checker" target="_blank" class="text-slate-400 hover:text-white transition">GitHub</a>
+            </div>
+        </div>
+    </div>
+</footer>
 </body>
 </html>
