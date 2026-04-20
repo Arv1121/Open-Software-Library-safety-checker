@@ -96,10 +96,17 @@ def compute_verdict(meta, vulns):
         reasons.append("High-severity vulnerability present")
 
     last_release = meta.get("latest_release_date")
-    if last_release and datetime.utcnow() - last_release > timedelta(days=540):
-        if verdict == "Safe":
-            verdict = "Needs review"
-        reasons.append("Stale maintenance (no recent releases)")
+    if last_release:
+        # Handle both naive and aware datetimes
+        if last_release.tzinfo is None:
+            now = datetime.utcnow()
+        else:
+            now = datetime.now(last_release.tzinfo)
+        
+        if now - last_release > timedelta(days=540):
+            if verdict == "Safe":
+                verdict = "Needs review"
+            reasons.append("Stale maintenance (no recent releases)")
 
     if not meta.get("name"):
         verdict = "Needs review"
