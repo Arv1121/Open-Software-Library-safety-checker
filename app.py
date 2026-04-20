@@ -107,7 +107,6 @@ def compute_verdict(meta, vulns):
 
     return verdict, reasons
 
-@lru_cache(maxsize=100)
 def get_package_info(package):
     """Fetch package info"""
     try:
