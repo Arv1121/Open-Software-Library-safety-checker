@@ -104,7 +104,24 @@
                     </ul>
                 {% endif %}
             </div>
-
+<!-- Search Stats -->
+<div class="glass rounded-xl p-6 mb-8">
+    <h2 class="text-lg font-bold mb-4">📊 Service Statistics</h2>
+    <div class="grid grid-cols-3 gap-4">
+        <div class="text-center">
+            <p class="text-2xl font-bold text-blue-400">{{ stats.unique_visitors }}</p>
+            <p class="text-sm text-slate-400">Unique Visitors</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-purple-400">{{ stats.total_searches }}</p>
+            <p class="text-sm text-slate-400">Total Searches</p>
+        </div>
+        <div class="text-center">
+            <p class="text-2xl font-bold text-green-400">{{ stats.package_searches }}</p>
+            <p class="text-sm text-slate-400">This Package Checked</p>
+        </div>
+    </div>
+</div>
             <!-- Quick Stats -->
             <div class="glass hover-lift rounded-xl p-6">
                 <h3 class="text-sm text-slate-400 mb-4">QUICK STATS</h3>
