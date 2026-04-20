@@ -109,18 +109,19 @@ def compute_verdict(meta, vulns):
 
 @lru_cache(maxsize=100)
 def get_package_info(package):
+    """Fetch package info"""
     try:
         meta = fetch_pypi_meta(package)
         vulns = fetch_osv(package, "PyPI")
         verdict, reasons = compute_verdict(meta or {}, vulns)
-
+        
         vuln_counts = {
             "CRITICAL": sum(1 for v in vulns if cvss_severity(v) == "CRITICAL"),
             "HIGH": sum(1 for v in vulns if cvss_severity(v) == "HIGH"),
             "MEDIUM": sum(1 for v in vulns if cvss_severity(v) == "MEDIUM"),
             "LOW": sum(1 for v in vulns if cvss_severity(v) == "LOW"),
         }
-
+        
         return {
             "name": package,
             "version": meta.get("version") if meta else "N/A",
@@ -130,7 +131,6 @@ def get_package_info(package):
             "last_updated": str(meta.get("latest_release_date")) if meta and meta.get("latest_release_date") else "Unknown"
         }
     except Exception as e:
-        logging.error(f"Error fetching package info for {package}: {e}")
         return {
             "name": package,
             "version": "N/A",
