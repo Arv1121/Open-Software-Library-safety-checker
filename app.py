@@ -5,12 +5,15 @@ import json
 import logging
 from functools import wraps
 import hashlib
+from collections import defaultdict
+import time
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'
+CORS(app)
 logging.basicConfig(level=logging.INFO)
 
-# In-memory stats (use Redis/DB in production)
+# Enhanced stats with timestamps
 STATS = {
     "unique_visitors": set(),
     "total_searches": 0,
@@ -330,7 +333,7 @@ def search():
     ecosystem = request.form.get("ecosystem") or "PyPI"
     version = request.form.get("version") or None
 
-    # Track search
+    # Track search with timestamp
     STATS["total_searches"] += 1
     STATS["searches_by_package"][package] = STATS["searches_by_package"].get(package, 0) + 1
     record_search(package, ecosystem)
@@ -480,4 +483,8 @@ def terms():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
+
+
