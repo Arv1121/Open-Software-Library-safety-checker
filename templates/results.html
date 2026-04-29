@@ -1,284 +1,317 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ package }} - Library Safety Checker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .score-badge {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: white;
-        }
-        .score-safe { background: linear-gradient(135deg, #10b981, #059669); }
-        .score-review { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .score-unsafe { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .severity-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-        .severity-critical { background: #fee2e2; color: #991b1b; }
-        .severity-high { background: #fef3c7; color: #92400e; }
-        .severity-medium { background: #dbeafe; color: #1e40af; }
-        .severity-low { background: #dcfce7; color: #166534; }
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            text-align: center;
-        }
-        .stat-card h3 { font-size: 2rem; font-weight: bold; }
-        .stat-card p { font-size: 0.875rem; opacity: 0.9; }
-        .fade-in { animation: fadeIn 0.5s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .hover-lift { transition: transform 0.3s, box-shadow 0.3s; }
-        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 25px rgba(0,0,0,0.1); }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
-    <nav class="bg-slate-800/50 backdrop-blur border-b border-slate-700 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                📦 Library Safety Checker
-            </a>
-            <div class="flex gap-4">
-                <a href="/dashboard" class="px-4 py-2 rounded-lg hover:bg-slate-700 transition">Dashboard</a>
-                <a href="/" class="px-4 py-2 rounded-lg hover:bg-slate-700 transition">New Search</a>
-            </div>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="mb-8 fade-in">
-            <h1 class="text-4xl font-bold mb-2">{{ package }}</h1>
-            {% if meta %}
-                <p class="text-slate-400">{{ meta.summary or 'No description available' }}</p>
-            {% endif %}
-        </div>
+{% block title %}{{ package }} Security Report – Library Safety Checker{% endblock %}
+{% block meta_description %}Security analysis for {{ package }}: vulnerability scan, license check, dependency data, and GitHub metrics.{% endblock %}
+{% block og_title %}{{ package }} – Security Report{% endblock %}
+{% block og_description %}{{ verdict }} verdict for {{ package }}. {{ vulns|length }} vulnerabilities found. Powered by OSV, PyPI, and GitHub data.{% endblock %}
 
-        <!-- Security Score & Verdict -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Score Badge -->
-            <div class="flex justify-center items-center">
-                {% set score = 100 if verdict == 'Safe' else 60 if verdict == 'Needs review' else 20 %}
-                {% set score_class = 'score-safe' if verdict == 'Safe' else 'score-review' if verdict == 'Needs review' else 'score-unsafe' %}
-                <div class="score-badge {{ score_class }} hover-lift">
-                    {{ score }}
-                </div>
-            </div>
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-10">
 
-            <!-- Verdict Card -->
-            <div class="glass hover-lift rounded-xl p-6">
-                <h3 class="text-sm text-slate-400 mb-2">VERDICT</h3>
-                <p class="text-3xl font-bold mb-4">
-                    {% if verdict == 'Safe' %}
-                        ✅ Safe
-                    {% elif verdict == 'Needs review' %}
-                        ⚠️ Review
-                    {% else %}
-                        ❌ Unsafe
-                    {% endif %}
-                </p>
-                {% if reasons %}
-                    <ul class="text-sm text-slate-300 space-y-1">
-                        {% for reason in reasons %}
-                            <li>• {{ reason }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            </div>
-<!-- Search Stats -->
-<div class="glass rounded-xl p-6 mb-8">
-    <h2 class="text-lg font-bold mb-4">📊 Service Statistics</h2>
-    <div class="grid grid-cols-3 gap-4">
-        <div class="text-center">
-            <p class="text-2xl font-bold text-blue-400">{{ stats.unique_visitors }}</p>
-            <p class="text-sm text-slate-400">Unique Visitors</p>
-        </div>
-        <div class="text-center">
-            <p class="text-2xl font-bold text-purple-400">{{ stats.total_searches }}</p>
-            <p class="text-sm text-slate-400">Total Searches</p>
-        </div>
-        <div class="text-center">
-            <p class="text-2xl font-bold text-green-400">{{ stats.package_searches }}</p>
-            <p class="text-sm text-slate-400">This Package Checked</p>
-        </div>
+  <!-- ── Breadcrumb ─────────────────────────────────────────── -->
+  <nav class="text-sm text-slate-500 mb-6 fade-in" aria-label="Breadcrumb">
+    <a href="/" class="hover:text-white transition">Home</a>
+    <span class="mx-2">/</span>
+    <span class="text-slate-300">{{ package }}</span>
+  </nav>
+
+  <!-- ── Header ────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-8 fade-in-up">
+    <div>
+      <div class="flex items-center gap-3 mb-1">
+        <h1 class="text-4xl font-extrabold">{{ package }}</h1>
+        <button class="fav-btn" data-pkg="{{ package }}" title="Add to favorites">☆</button>
+      </div>
+      {% if meta %}
+        <p class="text-slate-400 max-w-xl">{{ meta.summary or 'No description available' }}</p>
+      {% endif %}
+      <div class="flex flex-wrap gap-2 mt-3">
+        {% if meta and meta.version %}
+          <span class="px-2.5 py-1 rounded-full bg-slate-700 text-xs font-mono font-bold">v{{ meta.version }}</span>
+        {% endif %}
+        {% if meta and meta.license %}
+          <span class="px-2.5 py-1 rounded-full bg-slate-700 text-xs">{{ meta.license }}</span>
+        {% endif %}
+        <span class="px-2.5 py-1 rounded-full bg-slate-700 text-xs">{{ ecosystem }}</span>
+      </div>
     </div>
-</div>
-            <!-- Quick Stats -->
-            <div class="glass hover-lift rounded-xl p-6">
-                <h3 class="text-sm text-slate-400 mb-4">QUICK STATS</h3>
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <span>Version:</span>
-                        <span class="font-mono font-bold">{{ meta.version if meta else 'N/A' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>License:</span>
-                        <span class="font-mono">{{ meta.license if meta else 'Unknown' }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Last Updated:</span>
-                        <span class="font-mono text-xs">{{ meta.latest_release_date[:10] if meta and meta.latest_release_date else 'Unknown' }}</span>
-                    </div>
-                </div>
-            </div>
+
+    <!-- Action buttons -->
+    <div class="flex flex-wrap gap-2 no-print">
+      <button onclick="exportJSON('{{ package }}')"
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">
+        📥 Export JSON
+      </button>
+      <button onclick="exportPDF()"
+        class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-semibold transition flex items-center gap-1.5">
+        🖨️ Print / PDF
+      </button>
+      <button class="compare-add-btn px-4 py-2 bg-purple-700 hover:bg-purple-600 rounded-xl text-sm font-semibold transition flex items-center gap-1.5"
+        data-pkg="{{ package }}">
+        ⚖️ Add to Compare
+      </button>
+      <a href="/" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-semibold transition">
+        🔍 New Search
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Verdict + Score + Quick Stats ─────────────────────── -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 stagger">
+
+    <!-- Score badge -->
+    <div class="glass rounded-2xl p-6 flex flex-col items-center justify-center gap-4">
+      {% set score = 100 if verdict == 'Safe' else 60 if verdict == 'Needs review' else 20 %}
+      {% set score_cls = 'score-safe' if verdict == 'Safe' else 'score-review' if verdict == 'Needs review' else 'score-unsafe' %}
+      <div class="score-badge {{ score_cls }}">{{ score }}</div>
+      <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">Security Score</p>
+    </div>
+
+    <!-- Verdict -->
+    <div class="glass rounded-2xl p-6">
+      <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-3">Verdict</p>
+      {% set v_cls = 'verdict-safe' if verdict == 'Safe' else 'verdict-review' if verdict == 'Needs review' else 'verdict-unsafe' %}
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full {{ v_cls }} text-lg font-bold mb-4">
+        {% if verdict == 'Safe' %}✅ Safe
+        {% elif verdict == 'Needs review' %}⚠️ Needs Review
+        {% else %}❌ Unsafe{% endif %}
+      </div>
+      {% if reasons %}
+        <ul class="space-y-1.5">
+          {% for reason in reasons %}
+            <li class="flex items-start gap-2 text-sm text-slate-300">
+              <span class="text-slate-500 mt-0.5">•</span>{{ reason }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-sm text-slate-400">No issues detected.</p>
+      {% endif %}
+    </div>
+
+    <!-- Quick stats -->
+    <div class="glass rounded-2xl p-6">
+      <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-3">Quick Stats</p>
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">Version</span>
+          <span class="font-mono font-bold">{{ meta.version if meta else 'N/A' }}</span>
         </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">License</span>
+          <span class="font-mono">{{ meta.license if meta else 'Unknown' }}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">Last Release</span>
+          <span class="font-mono text-xs">
+            {% if meta and meta.latest_release_date %}
+              {{ meta.latest_release_date|string|truncate(10, True, '') }}
+            {% else %}Unknown{% endif %}
+          </span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">Checked</span>
+          <span class="font-mono text-xs">{{ stats.package_searches }}×</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- Vulnerabilities Section -->
-        <div class="glass hover-lift rounded-xl p-6 mb-8">
-            <h2 class="text-2xl font-bold mb-6">🔒 Vulnerabilities</h2>
-            
-            {% if vulns %}
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="stat-card">
-                        <h3>{{ vulns|length }}</h3>
-                        <p>Total Issues</p>
-                    </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-                        <h3>{{ vulns|selectattr('severity')|list|length }}</h3>
-                        <p>Critical</p>
-                    </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                        <h3>{{ vulns|selectattr('severity')|list|length }}</h3>
-                        <p>High</p>
-                    </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
-                        <h3>{{ vulns|selectattr('severity')|list|length }}</h3>
-                        <p>Medium</p>
-                    </div>
-                </div>
+  <!-- ── Vulnerability section ─────────────────────────────── -->
+  <div class="glass rounded-2xl p-6 mb-8 fade-in-up">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <h2 class="text-2xl font-bold">🔒 Vulnerabilities</h2>
+      {% if vulns %}
+        <span class="px-3 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 text-sm font-bold">
+          {{ vulns|length }} found
+        </span>
+      {% else %}
+        <span class="px-3 py-1 rounded-full bg-green-500/15 text-green-400 border border-green-500/30 text-sm font-bold">
+          ✅ None found
+        </span>
+      {% endif %}
+    </div>
 
-                <div class="space-y-4">
-                    {% for vuln in vulns[:10] %}
-                        <div class="bg-slate-700/50 rounded-lg p-4 hover-lift border-l-4 border-red-500">
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg">{{ vuln.id }}</h3>
-                                <span class="severity-badge severity-high">HIGH</span>
-                            </div>
-                            <p class="text-slate-300 text-sm mb-2">{{ vuln.summary or 'No description' }}</p>
-                            {% if vuln.references %}
-                                <a href="{{ vuln.references[0].url }}" target="_blank" class="text-blue-400 hover:underline text-sm">
-                                    View Details →
-                                </a>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
+    {% if vulns %}
+      <!-- Severity summary cards -->
+      {% set crit  = namespace(n=0) %}
+      {% set high  = namespace(n=0) %}
+      {% set med   = namespace(n=0) %}
+      {% set low   = namespace(n=0) %}
+      {% for v in vulns %}
+        {% set sev = cvss_severity(v) %}
+        {% if sev == 'CRITICAL' %}{% set crit.n = crit.n + 1 %}
+        {% elif sev == 'HIGH' %}{% set high.n = high.n + 1 %}
+        {% elif sev == 'MEDIUM' %}{% set med.n = med.n + 1 %}
+        {% else %}{% set low.n = low.n + 1 %}{% endif %}
+      {% endfor %}
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div class="rounded-xl p-4 text-center" style="background:linear-gradient(135deg,#ef4444,#dc2626)">
+          <p class="text-3xl font-extrabold">{{ crit.n }}</p>
+          <p class="text-xs opacity-90 mt-1">Critical</p>
+        </div>
+        <div class="rounded-xl p-4 text-center" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+          <p class="text-3xl font-extrabold">{{ high.n }}</p>
+          <p class="text-xs opacity-90 mt-1">High</p>
+        </div>
+        <div class="rounded-xl p-4 text-center" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">
+          <p class="text-3xl font-extrabold">{{ med.n }}</p>
+          <p class="text-xs opacity-90 mt-1">Medium</p>
+        </div>
+        <div class="rounded-xl p-4 text-center" style="background:linear-gradient(135deg,#10b981,#059669)">
+          <p class="text-3xl font-extrabold">{{ low.n }}</p>
+          <p class="text-xs opacity-90 mt-1">Low</p>
+        </div>
+      </div>
+
+      <!-- Doughnut chart -->
+      <div class="flex justify-center mb-6">
+        <div class="w-56 h-56">
+          <canvas id="vuln-chart"
+            data-critical="{{ crit.n }}"
+            data-high="{{ high.n }}"
+            data-medium="{{ med.n }}"
+            data-low="{{ low.n }}"></canvas>
+        </div>
+      </div>
+
+      <!-- Vuln list -->
+      <div class="space-y-3">
+        {% for vuln in vulns[:15] %}
+          {% set sev = cvss_severity(vuln) %}
+          {% set card_cls = 'sev-high-card' if sev == 'HIGH' else 'sev-medium-card' if sev == 'MEDIUM' else 'sev-low-card' if sev == 'LOW' else '' %}
+          <div class="vuln-card {{ card_cls }}">
+            <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
+              <h3 class="font-bold font-mono text-sm">{{ vuln.id }}</h3>
+              <span class="sev-badge sev-{{ sev|lower }}">{{ sev }}</span>
+            </div>
+            <p class="text-slate-300 text-sm mb-2">{{ vuln.summary or 'No description available' }}</p>
+            {% if vuln.references %}
+              <a href="{{ vuln.references[0].url }}" target="_blank" rel="noopener"
+                class="text-blue-400 hover:underline text-xs">View advisory →</a>
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% if vulns|length > 15 %}
+          <p class="text-center text-slate-400 text-sm pt-2">… and {{ vulns|length - 15 }} more vulnerabilities</p>
+        {% endif %}
+      </div>
+
+    {% else %}
+      <div class="text-center py-12">
+        <div class="text-5xl mb-4">✅</div>
+        <p class="text-xl font-bold text-green-400 mb-2">No known vulnerabilities</p>
+        <p class="text-slate-400 text-sm">This package has no entries in the OSV database.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Package info + Ecosystem ──────────────────────────── -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 stagger">
+
+    <!-- Metadata -->
+    <div class="glass rounded-2xl p-6">
+      <h2 class="text-xl font-bold mb-5">📋 Package Info</h2>
+      {% if meta %}
+        <div class="space-y-4 text-sm">
+          <div>
+            <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Author</p>
+            <p class="font-semibold">{{ meta.author or 'Unknown' }}</p>
+          </div>
+          <div>
+            <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Home Page</p>
+            {% if meta.home_page %}
+              <a href="{{ meta.home_page }}" target="_blank" rel="noopener"
+                class="text-blue-400 hover:underline break-all">{{ meta.home_page }}</a>
             {% else %}
-                <div class="text-center py-8">
-                    <p class="text-slate-400">✅ No known vulnerabilities found</p>
-                </div>
+              <p class="text-slate-500">N/A</p>
             {% endif %}
+          </div>
+          <div>
+            <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Summary</p>
+            <p class="text-slate-300">{{ meta.summary or 'No description' }}</p>
+          </div>
         </div>
-
-        <!-- Package Info -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <!-- Metadata -->
-            <div class="glass hover-lift rounded-xl p-6">
-                <h2 class="text-xl font-bold mb-4">📋 Package Info</h2>
-                {% if meta %}
-                    <div class="space-y-3 text-sm">
-                        <div>
-                            <p class="text-slate-400">Author</p>
-                            <p class="font-semibold">{{ meta.author or 'Unknown' }}</p>
-                        </div>
-                        <div>
-                            <p class="text-slate-400">Downloads (Last Month)</p>
-                            <p class="font-semibold">{{ "{:,}".format(meta.downloads_last_month or 0) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-slate-400">Home Page</p>
-                            {% if meta.home_page %}
-                                <a href="{{ meta.home_page }}" target="_blank" class="text-blue-400 hover:underline break-all">
-                                    {{ meta.home_page }}
-                                </a>
-                            {% else %}
-                                <p>N/A</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% else %}
-                    <p class="text-slate-400">Package metadata not available</p>
-                {% endif %}
-            </div>
-
-            <!-- Dependencies & GitHub -->
-            <div class="glass hover-lift rounded-xl p-6">
-                <h2 class="text-xl font-bold mb-4">🔗 Ecosystem</h2>
-                <div class="space-y-3 text-sm">
-                    <div>
-                        <p class="text-slate-400">Dependencies</p>
-                        <p class="font-semibold text-lg">{{ deps_data.dependencies or 0 }}</p>
-                    </div>
-                    <div>
-                        <p class="text-slate-400">Dependents</p>
-                        <p class="font-semibold text-lg">{{ "{:,}".format(deps_data.dependents or 0) }}</p>
-                    </div>
-                    {% if github_data %}
-                        <div class="pt-3 border-t border-slate-600">
-                            <p class="text-slate-400 mb-2">GitHub Stats</p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <p class="text-xs text-slate-500">⭐ Stars</p>
-                                    <p class="font-bold">{{ "{:,}".format(github_data.stars or 0) }}</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-slate-500">🍴 Forks</p>
-                                    <p class="font-bold">{{ "{:,}".format(github_data.forks or 0) }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="flex gap-4 justify-center mb-8">
-            <button onclick="exportPDF()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition">
-                📥 Export Report
-            </button>
-            <button onclick="addFavorite('{{ package }}')" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition">
-                ⭐ Add to Favorites
-            </button>
-            <a href="/" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-semibold transition">
-                🔍 New Search
-            </a>
-        </div>
+      {% else %}
+        <p class="text-slate-400">Package metadata not available.</p>
+      {% endif %}
     </div>
 
-    <script>
-        function exportPDF() {
-            alert('PDF export coming soon!');
-        }
-        function addFavorite(pkg) {
-            let favs = JSON.parse(localStorage.getItem('favorites') || '[]');
-            if (!favs.includes(pkg)) {
-                favs.push(pkg);
-                localStorage.setItem('favorites', JSON.stringify(favs));
-                alert('Added to favorites!');
-            } else {
-                alert('Already in favorites');
-            }
-        }
-    </script>
-</body>
-</html>
+    <!-- Ecosystem / GitHub -->
+    <div class="glass rounded-2xl p-6">
+      <h2 class="text-xl font-bold mb-5">🔗 Ecosystem</h2>
+      <div class="space-y-4 text-sm">
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">Dependencies</span>
+          <span class="font-bold text-lg">{{ deps_data.dependencies or 0 }}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-slate-400">Dependents</span>
+          <span class="font-bold text-lg">{{ "{:,}".format(deps_data.dependents or 0) }}</span>
+        </div>
+
+        {% if github_data %}
+          <div class="border-t border-slate-700 pt-4">
+            <p class="text-slate-400 text-xs uppercase tracking-wide mb-3">GitHub</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-800/60 rounded-xl p-3 text-center">
+                <p class="text-xs text-slate-500">⭐ Stars</p>
+                <p class="font-bold text-lg">{{ "{:,}".format(github_data.stars or 0) }}</p>
+              </div>
+              <div class="bg-slate-800/60 rounded-xl p-3 text-center">
+                <p class="text-xs text-slate-500">🍴 Forks</p>
+                <p class="font-bold text-lg">{{ "{:,}".format(github_data.forks or 0) }}</p>
+              </div>
+              <div class="bg-slate-800/60 rounded-xl p-3 text-center">
+                <p class="text-xs text-slate-500">🐛 Issues</p>
+                <p class="font-bold text-lg">{{ "{:,}".format(github_data.open_issues or 0) }}</p>
+              </div>
+              <div class="bg-slate-800/60 rounded-xl p-3 text-center">
+                <p class="text-xs text-slate-500">👁 Watchers</p>
+                <p class="font-bold text-lg">{{ "{:,}".format(github_data.watchers or 0) }}</p>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Service stats strip ───────────────────────────────── -->
+  <div class="glass rounded-2xl p-6 mb-8">
+    <h2 class="text-base font-bold mb-4 text-slate-400 uppercase tracking-widest text-xs">Service Statistics</h2>
+    <div class="grid grid-cols-3 gap-4 text-center">
+      <div>
+        <p class="text-2xl font-bold text-blue-400" data-count="{{ stats.unique_visitors }}">{{ stats.unique_visitors }}</p>
+        <p class="text-xs text-slate-500 mt-1">Unique Visitors</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-purple-400" data-count="{{ stats.total_searches }}">{{ stats.total_searches }}</p>
+        <p class="text-xs text-slate-500 mt-1">Total Searches</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-green-400" data-count="{{ stats.package_searches }}">{{ stats.package_searches }}</p>
+        <p class="text-xs text-slate-500 mt-1">This Package Checked</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Vulnerability counts are embedded via data attributes on the canvas
+  (function() {
+    var canvas = document.getElementById('vuln-chart');
+    if (!canvas) return;
+    renderVulnChart('vuln-chart', {
+      CRITICAL: parseInt(canvas.dataset.critical || '0', 10),
+      HIGH:     parseInt(canvas.dataset.high     || '0', 10),
+      MEDIUM:   parseInt(canvas.dataset.medium   || '0', 10),
+      LOW:      parseInt(canvas.dataset.low      || '0', 10)
+    });
+  })();
+</script>
+{% endblock %}

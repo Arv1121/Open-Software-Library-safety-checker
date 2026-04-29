@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block meta_description %}Library Safety Checker – real-time vulnerability scanning, dependency analysis, and security scoring for open-source packages.{% endblock %}">
+  <meta name="keywords" content="{% block meta_keywords %}library safety, package security, vulnerability scanner, OSV, PyPI, open source{% endblock %}">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0f172a">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:site_name"   content="Library Safety Checker">
+  <meta property="og:title"       content="{% block og_title %}Library Safety Checker{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Real-time vulnerability scanning and security scoring for open-source packages.{% endblock %}">
+  <meta property="og:url"         content="{{ request.url }}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary">
+  <meta name="twitter:title"       content="{% block tw_title %}Library Safety Checker{% endblock %}">
+  <meta name="twitter:description" content="{% block tw_description %}Real-time vulnerability scanning for open-source packages.{% endblock %}">
+
+  <title>{% block title %}Library Safety Checker{% endblock %}</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced.css') }}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="animated-bg text-white min-h-screen flex flex-col">
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- ── Navigation ─────────────────────────────────────── -->
+  <nav class="bg-slate-900/70 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+
+      <!-- Brand -->
+      <a href="/" class="flex items-center gap-2 shrink-0">
+        <span class="text-2xl">📦</span>
+        <span class="font-bold text-lg gradient-text hidden sm:inline">Library Safety Checker</span>
+        <span class="font-bold text-lg gradient-text sm:hidden">LSC</span>
+      </a>
+
+      <!-- Nav links -->
+      <div class="flex items-center gap-1 sm:gap-2 text-sm font-medium">
+        <a href="/"          class="px-3 py-1.5 rounded-lg hover:bg-white/10 transition text-slate-300 hover:text-white">Home</a>
+        <a href="/dashboard" class="px-3 py-1.5 rounded-lg hover:bg-white/10 transition text-slate-300 hover:text-white">Dashboard</a>
+        <a href="/compare"   class="relative px-3 py-1.5 rounded-lg hover:bg-white/10 transition text-slate-300 hover:text-white">
+          Compare
+          <span id="compare-badge"
+            class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-xs rounded-full items-center justify-center font-bold hidden">0</span>
+        </a>
+        <button id="theme-toggle" title="Toggle theme" aria-label="Toggle dark/light mode">🌙</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page content ───────────────────────────────────── -->
+  <main class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer class="bg-slate-900/60 backdrop-blur border-t border-white/10 mt-16">
+    <div class="max-w-7xl mx-auto px-4 py-10">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Product</p>
+          <ul class="space-y-2 text-sm text-slate-400">
+            <li><a href="/"          class="hover:text-white transition">Home</a></li>
+            <li><a href="/dashboard" class="hover:text-white transition">Dashboard</a></li>
+            <li><a href="/compare"   class="hover:text-white transition">Compare</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">API</p>
+          <ul class="space-y-2 text-sm text-slate-400">
+            <li><a href="/api/stats"      class="hover:text-white transition">/api/stats</a></li>
+            <li><a href="/api/trending"   class="hover:text-white transition">/api/trending</a></li>
+            <li><a href="/api/autocomplete?q=flask" class="hover:text-white transition">/api/autocomplete</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Legal</p>
+          <ul class="space-y-2 text-sm text-slate-400">
+            <li><a href="/terms" class="hover:text-white transition">Terms &amp; Conditions</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Stats</p>
+          <p class="text-2xl font-bold text-blue-400" data-count="{{ stats.unique_visitors if stats else 0 }}">{{ stats.unique_visitors if stats else 0 }}</p>
+          <p class="text-xs text-slate-500">Unique visitors</p>
+          <p class="text-2xl font-bold text-purple-400 mt-2" data-count="{{ stats.total_searches if stats else 0 }}">{{ stats.total_searches if stats else 0 }}</p>
+          <p class="text-xs text-slate-500">Total searches</p>
+        </div>
+      </div>
+
+      <div class="border-t border-white/10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-sm text-slate-500">
+        <p>© 2026 Library Safety Checker. All rights reserved.</p>
+        <div class="flex gap-4">
+          <a href="/terms" class="hover:text-white transition">Terms</a>
+          <a href="https://github.com/Arv1121/ibrary-safety-checker" target="_blank" rel="noopener" class="hover:text-white transition">GitHub ↗</a>
+          <a href="/api/stats" class="hover:text-white transition">API</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Scripts ────────────────────────────────────────── -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

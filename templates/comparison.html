@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Packages – Library Safety Checker{% endblock %}
+{% block meta_description %}Side-by-side security comparison of Python packages. Compare vulnerabilities, licenses, GitHub stats, and safety verdicts.{% endblock %}
+{% block og_title %}Package Comparison – Library Safety Checker{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+
+  <!-- ── Header ────────────────────────────────────────────── -->
+  <div class="mb-8 fade-in-up">
+    <h1 class="text-4xl font-extrabold mb-2">⚖️ Package Comparison</h1>
+    <p class="text-slate-400">Compare up to 3 packages side by side</p>
+  </div>
+
+  <!-- ── Package selector form ─────────────────────────────── -->
+  <div class="glass rounded-2xl p-6 mb-8 fade-in-up no-print">
+    <h2 class="text-base font-bold mb-4 text-slate-300">Select packages to compare</h2>
+    <form method="GET" action="/compare" class="flex flex-wrap gap-3 items-end">
+      {% for i in range(3) %}
+      <div class="flex-1 min-w-[160px]">
+        <label class="block text-xs text-slate-400 mb-1">Package {{ i + 1 }}{% if i == 0 %} *{% endif %}</label>
+        <input type="text" name="pkg"
+          value="{{ pkgs[i] if pkgs and i < pkgs|length else '' }}"
+          placeholder="e.g., flask"
+          class="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 focus:border-blue-500 focus:outline-none text-sm text-white placeholder-slate-500"
+          {% if i == 0 %}required{% endif %}>
+      </div>
+      {% endfor %}
+      <button type="submit"
+        class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl font-bold text-sm transition">
+        Compare →
+      </button>
+    </form>
+  </div>
+
+  {% if results %}
+  <!-- ── Verdict summary row ───────────────────────────────── -->
+  <div class="grid gap-4 mb-8 stagger" style="grid-template-columns: repeat({{ results|length }}, 1fr)">
+    {% for pkg in results %}
+    {% set v_cls = 'score-safe' if pkg.verdict == 'Safe' else 'score-review' if pkg.verdict == 'Needs review' else 'score-unsafe' %}
+    {% set score = 100 if pkg.verdict == 'Safe' else 60 if pkg.verdict == 'Needs review' else 20 %}
+    <div class="glass rounded-2xl p-6 text-center">
+      <h2 class="text-xl font-bold mb-3">{{ pkg.name }}</h2>
+      <div class="score-badge {{ v_cls }} mx-auto mb-3">{{ score }}</div>
+      {% set pill_cls = 'verdict-safe' if pkg.verdict == 'Safe' else 'verdict-review' if pkg.verdict == 'Needs review' else 'verdict-unsafe' %}
+      <span class="inline-block px-3 py-1 rounded-full text-sm font-bold {{ pill_cls }}">
+        {% if pkg.verdict == 'Safe' %}✅{% elif pkg.verdict == 'Needs review' %}⚠️{% else %}❌{% endif %}
+        {{ pkg.verdict }}
+      </span>
+      <p class="text-xs text-slate-400 mt-2 font-mono">v{{ pkg.version }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Comparison table ──────────────────────────────────── -->
+  <div class="glass rounded-2xl overflow-hidden mb-8 fade-in-up">
+    <div class="overflow-x-auto">
+      <table class="compare-table w-full">
+        <thead>
+          <tr class="bg-slate-800/60">
+            <th class="w-40">Attribute</th>
+            {% for pkg in results %}
+            <th>{{ pkg.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- License -->
+          <tr>
+            <td class="text-slate-400 font-semibold">License</td>
+            {% for pkg in results %}
+            <td class="font-mono text-sm">{{ pkg.license or 'Unknown' }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- Version -->
+          <tr>
+            <td class="text-slate-400 font-semibold">Version</td>
+            {% for pkg in results %}
+            <td class="font-mono text-sm">{{ pkg.version }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- Last Updated -->
+          <tr>
+            <td class="text-slate-400 font-semibold">Last Updated</td>
+            {% for pkg in results %}
+            <td class="text-sm">{{ pkg.last_updated[:10] if pkg.last_updated and pkg.last_updated != 'Unknown' else '—' }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- Critical vulns -->
+          <tr>
+            <td class="text-slate-400 font-semibold">🔴 Critical</td>
+            {% for pkg in results %}
+            <td>
+              {% if pkg.vulnerabilities.CRITICAL > 0 %}
+                <span class="sev-badge sev-critical">{{ pkg.vulnerabilities.CRITICAL }}</span>
+              {% else %}
+                <span class="text-green-400 font-bold">0</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- High vulns -->
+          <tr>
+            <td class="text-slate-400 font-semibold">🟠 High</td>
+            {% for pkg in results %}
+            <td>
+              {% if pkg.vulnerabilities.HIGH > 0 %}
+                <span class="sev-badge sev-high">{{ pkg.vulnerabilities.HIGH }}</span>
+              {% else %}
+                <span class="text-green-400 font-bold">0</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- Medium vulns -->
+          <tr>
+            <td class="text-slate-400 font-semibold">🟡 Medium</td>
+            {% for pkg in results %}
+            <td>
+              {% if pkg.vulnerabilities.MEDIUM > 0 %}
+                <span class="sev-badge sev-medium">{{ pkg.vulnerabilities.MEDIUM }}</span>
+              {% else %}
+                <span class="text-green-400 font-bold">0</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- Low vulns -->
+          <tr>
+            <td class="text-slate-400 font-semibold">🟢 Low</td>
+            {% for pkg in results %}
+            <td>
+              {% if pkg.vulnerabilities.LOW > 0 %}
+                <span class="sev-badge sev-low">{{ pkg.vulnerabilities.LOW }}</span>
+              {% else %}
+                <span class="text-green-400 font-bold">0</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- Dependencies -->
+          <tr>
+            <td class="text-slate-400 font-semibold">Dependencies</td>
+            {% for pkg in results %}
+            <td class="font-bold">{{ pkg.dependencies or 0 }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- Dependents -->
+          <tr>
+            <td class="text-slate-400 font-semibold">Dependents</td>
+            {% for pkg in results %}
+            <td class="font-bold">{{ "{:,}".format(pkg.dependents or 0) }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- GitHub Stars -->
+          <tr>
+            <td class="text-slate-400 font-semibold">⭐ Stars</td>
+            {% for pkg in results %}
+            <td class="font-bold">
+              {% if pkg.github and pkg.github.stars %}
+                {{ "{:,}".format(pkg.github.stars) }}
+              {% else %}—{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- GitHub Forks -->
+          <tr>
+            <td class="text-slate-400 font-semibold">🍴 Forks</td>
+            {% for pkg in results %}
+            <td class="font-bold">
+              {% if pkg.github and pkg.github.forks %}
+                {{ "{:,}".format(pkg.github.forks) }}
+              {% else %}—{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- Open Issues -->
+          <tr>
+            <td class="text-slate-400 font-semibold">🐛 Open Issues</td>
+            {% for pkg in results %}
+            <td class="font-bold">
+              {% if pkg.github and pkg.github.open_issues is defined %}
+                {{ "{:,}".format(pkg.github.open_issues or 0) }}
+              {% else %}—{% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- Author -->
+          <tr>
+            <td class="text-slate-400 font-semibold">Author</td>
+            {% for pkg in results %}
+            <td class="text-sm">{{ pkg.author or '—' }}</td>
+            {% endfor %}
+          </tr>
+
+          <!-- Reasons -->
+          <tr>
+            <td class="text-slate-400 font-semibold align-top pt-3">Issues</td>
+            {% for pkg in results %}
+            <td class="text-sm align-top pt-3">
+              {% if pkg.reasons %}
+                <ul class="space-y-1">
+                  {% for r in pkg.reasons %}
+                    <li class="text-amber-400">• {{ r }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <span class="text-green-400">None</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+
+          <!-- Actions -->
+          <tr>
+            <td class="text-slate-400 font-semibold">Actions</td>
+            {% for pkg in results %}
+            <td>
+              <div class="flex flex-col gap-1.5">
+                <form action="/search" method="POST">
+                  <input type="hidden" name="package" value="{{ pkg.name }}">
+                  <input type="hidden" name="ecosystem" value="PyPI">
+                  <button type="submit"
+                    class="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold transition">
+                    Full Report
+                  </button>
+                </form>
+                <button onclick="exportJSON('{{ pkg.name }}')"
+                  class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold transition">
+                  Export JSON
+                </button>
+              </div>
+            </td>
+            {% endfor %}
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Bar chart comparison ──────────────────────────────── -->
+  <div class="glass rounded-2xl p-6 mb-8 fade-in-up">
+    <h2 class="text-xl font-bold mb-6">📊 Vulnerability Comparison</h2>
+    <div class="max-w-2xl mx-auto">
+      <canvas id="compare-chart" height="200"></canvas>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="glass rounded-2xl p-16 text-center fade-in-up">
+    <div class="text-6xl mb-4">⚖️</div>
+    <h2 class="text-2xl font-bold mb-2">No packages selected</h2>
+    <p class="text-slate-400 mb-6">Enter 2–3 package names above to compare them side by side.</p>
+    <a href="/dashboard" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition">
+      Browse Dashboard →
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if results %}
+<script>
+(function() {
+  var ctx = document.getElementById('compare-chart');
+  if (!ctx || typeof Chart === 'undefined') return;
+
+  var labels  = {{ results | map(attribute='name') | list | tojson }};
+  var critical = {{ results | map(attribute='vulnerabilities') | map(attribute='CRITICAL') | list | tojson }};
+  var high     = {{ results | map(attribute='vulnerabilities') | map(attribute='HIGH')     | list | tojson }};
+  var medium   = {{ results | map(attribute='vulnerabilities') | map(attribute='MEDIUM')   | list | tojson }};
+  var low      = {{ results | map(attribute='vulnerabilities') | map(attribute='LOW')      | list | tojson }};
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Critical', data: critical, backgroundColor: '#ef4444' },
+        { label: 'High',     data: high,     backgroundColor: '#f59e0b' },
+        { label: 'Medium',   data: medium,   backgroundColor: '#3b82f6' },
+        { label: 'Low',      data: low,      backgroundColor: '#10b981' },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#94a3b8' } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { stacked: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
