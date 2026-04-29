@@ -1,21 +1,27 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import requests
 from datetime import datetime, timedelta
 import json
 import logging
 from functools import wraps
 import hashlib
+from collections import defaultdict
+import time
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'
+CORS(app)
 logging.basicConfig(level=logging.INFO)
 
-# In-memory stats (use Redis/DB in production)
+# Enhanced stats with timestamps
 STATS = {
     "unique_visitors": set(),
     "total_searches": 0,
     "searches_by_package": {},
-    "visitor_ips": []
+    "visitor_ips": [],
+    "search_history": [],  # [(package, timestamp), ...]
+    "vulnerability_alerts": []  # [(package, vuln_count, timestamp), ...]
 }
 
 OSV_API = "https://api.osv.dev/v1/query"
@@ -32,7 +38,6 @@ def track_visitor(f):
     """Decorator to track unique visitors"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # Get visitor identifier (IP + User-Agent hash)
         ip = request.remote_addr
         user_agent = request.headers.get('User-Agent', '')
         visitor_id = hashlib.md5(f"{ip}{user_agent}".encode()).hexdigest()
@@ -273,9 +278,10 @@ def search():
     ecosystem = request.form.get("ecosystem") or "PyPI"
     version = request.form.get("version") or None
 
-    # Track search
+    # Track search with timestamp
     STATS["total_searches"] += 1
     STATS["searches_by_package"][package] = STATS["searches_by_package"].get(package, 0) + 1
+    STATS["search_history"].append((package, datetime.utcnow().isoformat()))
 
     try:
         meta = fetch_pypi_meta(package) if ecosystem == "PyPI" else {"name": package}
@@ -343,6 +349,59 @@ def api_stats():
         "total_searches": STATS["total_searches"],
         "top_packages": sorted(STATS["searches_by_package"].items(), key=lambda x: x[1], reverse=True)[:10]
     })
+
+# NEW: Live stats endpoint
+@app.route("/api/live-stats")
+def live_stats():
+    return jsonify({
+        "unique_visitors": len(STATS["unique_visitors"]),
+        "total_searches": STATS["total_searches"],
+        "timestamp": datetime.utcnow().isoformat()
+    })
+
+# NEW: Trending packages endpoint
+@app.route("/api/trending-packages")
+def trending_packages():
+    # Get searches from last hour
+    now = datetime.utcnow()
+    one_hour_ago = now - timedelta(hours=1)
+    
+    recent_searches = defaultdict(int)
+    for pkg, timestamp_str in STATS["search_history"]:
+        try:
+            timestamp = datetime.fromisoformat(timestamp_str)
+            if timestamp > one_hour_ago:
+                recent_searches[pkg] += 1
+        except:
+            pass
+    
+    trending = sorted(recent_searches.items(), key=lambda x: x[1], reverse=True)[:5]
+    return jsonify({
+        "trending": [{"package": pkg, "searches": count} for pkg, count in trending],
+        "timestamp": datetime.utcnow().isoformat()
+    })
+
+# NEW: Vulnerability alerts endpoint
+@app.route("/api/vulnerability-alerts")
+def vulnerability_alerts():
+    alerts = []
+    for pkg in POPULAR_PACKAGES[:5]:  # Check top 5 packages
+        try:
+            vulns = fetch_osv(pkg, "PyPI")
+            critical_count = sum(1 for v in vulns if cvss_severity(v) == "CRITICAL")
+            high_count = sum(1 for v in vulns if cvss_severity(v) == "HIGH")
+            
+            if critical_count > 0 or high_count > 0:
+                alerts.append({
+                    "package": pkg,
+                    "critical": critical_count,
+                    "high": high_count,
+                    "timestamp": datetime.utcnow().isoformat()
+                })
+        except:
+            pass
+    
+    return jsonify({"alerts": alerts})
 
 @app.route("/terms")
 @track_visitor
