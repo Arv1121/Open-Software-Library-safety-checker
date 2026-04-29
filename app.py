@@ -1,5 +1,4 @@
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
+from flask import Flask, render_template, request, jsonify, Response
 import requests
 from datetime import datetime, timedelta
 import json
@@ -20,8 +19,8 @@ STATS = {
     "total_searches": 0,
     "searches_by_package": {},
     "visitor_ips": [],
-    "search_history": [],  # [(package, timestamp), ...]
-    "vulnerability_alerts": []  # [(package, vuln_count, timestamp), ...]
+    "search_history": [],          # [{package, ecosystem, timestamp}]
+    "trending_window": [],         # recent searches for trending calc
 }
 
 OSV_API = "https://api.osv.dev/v1/query"
@@ -30,8 +29,34 @@ DEPS_DEV_API = "https://api.deps.dev/v3/systems/pypi/packages/{package}"
 GITHUB_API = "https://api.github.com/repos/{owner}/{repo}"
 
 POPULAR_PACKAGES = [
-    "flask", "django", "requests", "numpy", "pandas", 
+    "flask", "django", "requests", "numpy", "pandas",
     "sqlalchemy", "celery", "pytest", "beautifulsoup4", "pillow"
+]
+
+# Extended list for autocomplete suggestions
+KNOWN_PACKAGES = [
+    "flask", "django", "requests", "numpy", "pandas", "sqlalchemy", "celery",
+    "pytest", "beautifulsoup4", "pillow", "fastapi", "uvicorn", "pydantic",
+    "aiohttp", "httpx", "boto3", "botocore", "cryptography", "paramiko",
+    "pyopenssl", "twisted", "tornado", "gunicorn", "werkzeug", "jinja2",
+    "click", "rich", "typer", "loguru", "structlog", "sentry-sdk",
+    "redis", "pymongo", "psycopg2", "pymysql", "alembic", "peewee",
+    "marshmallow", "cerberus", "voluptuous", "attrs", "dataclasses-json",
+    "arrow", "pendulum", "python-dateutil", "pytz", "babel",
+    "scipy", "matplotlib", "seaborn", "plotly", "bokeh", "altair",
+    "scikit-learn", "tensorflow", "torch", "keras", "xgboost", "lightgbm",
+    "opencv-python", "imageio", "wand", "cairosvg",
+    "lxml", "html5lib", "cssselect", "pyquery", "mechanize",
+    "parameterized", "hypothesis", "faker", "factory-boy", "responses",
+    "black", "flake8", "mypy", "pylint", "bandit", "safety",
+    "setuptools", "wheel", "pip", "virtualenv", "pipenv", "poetry",
+    "tqdm", "colorama", "tabulate", "prettytable", "termcolor",
+    "pyyaml", "toml", "python-dotenv", "configparser", "dynaconf",
+    "stripe", "twilio", "sendgrid", "mailchimp3", "slack-sdk",
+    "google-cloud-storage", "google-auth", "azure-storage-blob",
+    "ansible", "fabric", "invoke", "doit", "prefect", "airflow",
+    "scrapy", "selenium", "playwright", "pyppeteer",
+    "jwt", "passlib", "bcrypt", "itsdangerous", "authlib",
 ]
 
 def track_visitor(f):
@@ -41,16 +66,43 @@ def track_visitor(f):
         ip = request.remote_addr
         user_agent = request.headers.get('User-Agent', '')
         visitor_id = hashlib.md5(f"{ip}{user_agent}".encode()).hexdigest()
-        
+
         STATS["unique_visitors"].add(visitor_id)
         STATS["visitor_ips"].append({
             "ip": ip,
             "timestamp": datetime.utcnow().isoformat(),
             "path": request.path
         })
-        
+
         return f(*args, **kwargs)
     return decorated_function
+
+
+def record_search(package, ecosystem):
+    """Record a search for history and trending."""
+    now = datetime.utcnow()
+    entry = {"package": package, "ecosystem": ecosystem, "timestamp": now.isoformat()}
+    STATS["search_history"].append(entry)
+    STATS["trending_window"].append(entry)
+    # Keep only last 500 entries in each list
+    STATS["search_history"] = STATS["search_history"][-500:]
+    STATS["trending_window"] = STATS["trending_window"][-200:]
+
+
+def get_trending_packages(limit=5):
+    """Return top packages searched in the last 24 hours."""
+    cutoff = datetime.utcnow() - timedelta(hours=24)
+    counts = {}
+    for entry in STATS["trending_window"]:
+        try:
+            ts = datetime.fromisoformat(entry["timestamp"])
+        except (ValueError, KeyError):
+            continue
+        if ts >= cutoff:
+            pkg = entry["package"]
+            counts[pkg] = counts.get(pkg, 0) + 1
+    sorted_pkgs = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    return [{"package": p, "count": c} for p, c in sorted_pkgs[:limit]]
 
 def fetch_osv(package, ecosystem="PyPI", version=None):
     try:
@@ -269,19 +321,22 @@ def index():
         "unique_visitors": len(STATS["unique_visitors"]),
         "total_searches": STATS["total_searches"]
     }
-    return render_template("index.html", stats=stats)
+    trending = get_trending_packages(5)
+    return render_template("index.html", stats=stats, trending=trending,
+                           popular_packages=POPULAR_PACKAGES)
+
 
 @app.route("/search", methods=["POST"])
 @track_visitor
 def search():
-    package = request.form.get("package")
+    package = request.form.get("package", "").strip()
     ecosystem = request.form.get("ecosystem") or "PyPI"
     version = request.form.get("version") or None
 
     # Track search with timestamp
     STATS["total_searches"] += 1
     STATS["searches_by_package"][package] = STATS["searches_by_package"].get(package, 0) + 1
-    STATS["search_history"].append((package, datetime.utcnow().isoformat()))
+    record_search(package, ecosystem)
 
     try:
         meta = fetch_pypi_meta(package) if ecosystem == "PyPI" else {"name": package}
@@ -307,7 +362,8 @@ def search():
                                reasons=reasons,
                                deps_data=deps_data,
                                github_data=github_data,
-                               stats=stats)
+                               stats=stats,
+                               cvss_severity=cvss_severity)
     except Exception as e:
         logging.error(f"Search error: {e}")
         stats = {
@@ -325,7 +381,9 @@ def search():
                                reasons=[str(e)],
                                deps_data={},
                                github_data=None,
-                               stats=stats)
+                               stats=stats,
+                               cvss_severity=cvss_severity)
+
 
 @app.route("/dashboard")
 @track_visitor
@@ -335,12 +393,30 @@ def dashboard():
         "unique_visitors": len(STATS["unique_visitors"]),
         "total_searches": STATS["total_searches"]
     }
-    return render_template("dashboard.html", packages=packages, stats=stats)
+    trending = get_trending_packages(5)
+    return render_template("dashboard.html", packages=packages, stats=stats, trending=trending)
+
+
+@app.route("/compare")
+@track_visitor
+def compare():
+    pkgs = request.args.getlist("pkg")
+    pkgs = [p.strip() for p in pkgs if p.strip()][:3]
+    results = [get_package_info(p) for p in pkgs] if pkgs else []
+    stats = {
+        "unique_visitors": len(STATS["unique_visitors"]),
+        "total_searches": STATS["total_searches"]
+    }
+    return render_template("comparison.html", results=results, pkgs=pkgs, stats=stats)
+
+
+# ── API endpoints ──────────────────────────────────────────────────────────────
 
 @app.route("/api/packages")
 def api_packages():
     packages = [get_package_info(pkg) for pkg in POPULAR_PACKAGES]
     return jsonify(packages)
+
 
 @app.route("/api/stats")
 def api_stats():
@@ -350,64 +426,62 @@ def api_stats():
         "top_packages": sorted(STATS["searches_by_package"].items(), key=lambda x: x[1], reverse=True)[:10]
     })
 
-# NEW: Live stats endpoint
-@app.route("/api/live-stats")
-def live_stats():
-    return jsonify({
-        "unique_visitors": len(STATS["unique_visitors"]),
-        "total_searches": STATS["total_searches"],
-        "timestamp": datetime.utcnow().isoformat()
-    })
 
-# NEW: Trending packages endpoint
-@app.route("/api/trending-packages")
-def trending_packages():
-    # Get searches from last hour
-    now = datetime.utcnow()
-    one_hour_ago = now - timedelta(hours=1)
-    
-    recent_searches = defaultdict(int)
-    for pkg, timestamp_str in STATS["search_history"]:
-        try:
-            timestamp = datetime.fromisoformat(timestamp_str)
-            if timestamp > one_hour_ago:
-                recent_searches[pkg] += 1
-        except:
-            pass
-    
-    trending = sorted(recent_searches.items(), key=lambda x: x[1], reverse=True)[:5]
-    return jsonify({
-        "trending": [{"package": pkg, "searches": count} for pkg, count in trending],
-        "timestamp": datetime.utcnow().isoformat()
-    })
+@app.route("/api/autocomplete")
+def api_autocomplete():
+    """Return package name suggestions matching the query prefix."""
+    q = request.args.get("q", "").strip().lower()
+    if len(q) < 1:
+        return jsonify([])
+    # Combine known list with previously searched packages
+    candidates = set(KNOWN_PACKAGES) | set(STATS["searches_by_package"].keys())
+    matches = sorted(
+        [p for p in candidates if q in p.lower()],
+        key=lambda p: (not p.lower().startswith(q), p)
+    )[:10]
+    return jsonify(matches)
 
-# NEW: Vulnerability alerts endpoint
-@app.route("/api/vulnerability-alerts")
-def vulnerability_alerts():
-    alerts = []
-    for pkg in POPULAR_PACKAGES[:5]:  # Check top 5 packages
-        try:
-            vulns = fetch_osv(pkg, "PyPI")
-            critical_count = sum(1 for v in vulns if cvss_severity(v) == "CRITICAL")
-            high_count = sum(1 for v in vulns if cvss_severity(v) == "HIGH")
-            
-            if critical_count > 0 or high_count > 0:
-                alerts.append({
-                    "package": pkg,
-                    "critical": critical_count,
-                    "high": high_count,
-                    "timestamp": datetime.utcnow().isoformat()
-                })
-        except:
-            pass
-    
-    return jsonify({"alerts": alerts})
+
+@app.route("/api/trending")
+def api_trending():
+    """Return trending packages (most searched in last 24 h)."""
+    return jsonify(get_trending_packages(10))
+
+
+@app.route("/api/history")
+def api_history():
+    """Return the last 20 search history entries."""
+    return jsonify(list(reversed(STATS["search_history"][-20:])))
+
+
+@app.route("/api/compare")
+def api_compare():
+    """Return JSON comparison data for up to 3 packages."""
+    pkgs = request.args.getlist("pkg")
+    pkgs = [p.strip() for p in pkgs if p.strip()][:3]
+    results = [get_package_info(p) for p in pkgs]
+    return jsonify(results)
+
+
+@app.route("/api/export/json/<package>")
+def api_export_json(package):
+    """Export package report as JSON download."""
+    data = get_package_info(package)
+    data["exported_at"] = datetime.utcnow().isoformat()
+    payload = json.dumps(data, indent=2, default=str)
+    return Response(
+        payload,
+        mimetype="application/json",
+        headers={"Content-Disposition": f"attachment; filename={package}-report.json"}
+    )
+
 
 @app.route("/terms")
 @track_visitor
 def terms():
-    return render_template("terms.html")
-    
+    return render_template("terms.html", now=datetime.utcnow())
+
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
