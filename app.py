@@ -492,20 +492,22 @@ if __name__ == "__main__":
 def add_security_headers(response):
     # Prevent Clickjacking
     response.headers["X-Frame-Options"] = "DENY"
-    
+
     # Prevent MIME type sniffing
     response.headers["X-Content-Type-Options"] = "nosniff"
-    
-    # Enforce HTTPS (HSTS)
+
+    # Enforce HTTPS (HSTS) - only if Railway serves HTTPS
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    
-    # Basic Content Security Policy
+
+    # Content Security Policy (adjust domains to match your templates)
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https://raw.githubusercontent.com https://img.shields.io; "
         "object-src 'none'; "
         "base-uri 'self'; "
         "frame-ancestors 'none'"
     )
     return response
-
