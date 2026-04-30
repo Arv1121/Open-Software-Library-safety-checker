@@ -1,5 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response
-from flask_cors import CORS
+from flask import CORS, render_template, request, jsonify, Response
 import requests
 from datetime import datetime, timedelta
 import json
