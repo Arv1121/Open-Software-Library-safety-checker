@@ -9,7 +9,7 @@ import hashlib
 from collections import defaultdict
 import time
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.secret_key = 'your-secret-key-change-this'
 CORS(app)
 logging.basicConfig(level=logging.INFO)
@@ -227,6 +227,10 @@ def cvss_severity(v):
                     continue
     
     return sev
+
+# Register cvss_severity as a Jinja2 template filter so templates can use
+# {{ vuln | cvss_severity }} in addition to calling it as a function.
+app.jinja_env.filters['cvss_severity'] = cvss_severity
 
 def compute_verdict(meta, vulns):
     reasons = []
@@ -499,11 +503,11 @@ def add_security_headers(response):
     # Enforce HTTPS (HSTS) - only if Railway serves HTTPS
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-    # Content Security Policy (adjust domains to match your templates)
+    # Content Security Policy – includes all CDNs used by templates
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com; "
+        "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdn.jsdelivr.net; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: https://raw.githubusercontent.com https://img.shields.io; "
         "object-src 'none'; "
