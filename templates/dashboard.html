@@ -1,9 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}OSS Dashboard – Library Safety Checker{% endblock %}
-{% block meta_description %}Security dashboard for popular Python packages. Filter by verdict, sort by vulnerabilities, and compare packages side by side.{% endblock %}
-{% block og_title %}OSS Security Dashboard{% endblock %}
-{% block og_description %}Real-time security status for popular Python packages including Flask, Django, Requests, NumPy, and more.{% endblock %}
+{% block title %}OSS Security Dashboard – Library Safety Checker{% endblock %}
+{% block meta_description %}Real-time security dashboard for popular Python packages. View vulnerability counts, license status, and safety verdicts for Flask, Django, Requests, NumPy, and more.{% endblock %}
+{% block meta_keywords %}python package security dashboard, OSS vulnerability dashboard, Flask security, Django vulnerabilities, PyPI package safety, open source security monitoring{% endblock %}
+{% block og_title %}OSS Security Dashboard – Library Safety Checker{% endblock %}
+{% block og_description %}Real-time security status for popular Python packages including Flask, Django, Requests, NumPy, and more. Filter by verdict, sort by vulnerabilities.{% endblock %}
+{% block tw_title %}OSS Security Dashboard – Library Safety Checker{% endblock %}
+{% block tw_description %}Monitor security status of popular Python packages in real time. Vulnerability counts, license checks, and safety verdicts at a glance.{% endblock %}
+{% block canonical_url %}https://ibrary-safety-checker-production.up.railway.app/dashboard{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Python Package Security Dashboard",
+  "description": "Real-time security status for popular open-source Python packages",
+  "url": "https://ibrary-safety-checker-production.up.railway.app/dashboard",
+  "numberOfItems": {{ packages | length }},
+  "itemListElement": [
+    {% for pkg in packages %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "item": {
+        "@type": "SoftwareApplication",
+        "name": "{{ pkg.name }}",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "softwareVersion": "{{ pkg.version }}",
+        "description": "{{ pkg.summary | default('Python package') | replace('"', '\\"') }}"
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-10">

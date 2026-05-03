@@ -1,9 +1,38 @@
 {% extends "base.html" %}
 
-{% block title %}{{ package }} Security Report – Library Safety Checker{% endblock %}
-{% block meta_description %}Security analysis for {{ package }}: vulnerability scan, license check, dependency data, and GitHub metrics.{% endblock %}
-{% block og_title %}{{ package }} – Security Report{% endblock %}
-{% block og_description %}{{ verdict }} verdict for {{ package }}. {{ vulns|length }} vulnerabilities found. Powered by OSV, PyPI, and GitHub data.{% endblock %}
+{% block title %}{{ package }} Security Report – Vulnerabilities & Safety Analysis{% endblock %}
+{% block meta_description %}Security analysis for {{ package }} ({{ ecosystem }}): {{ vulns|length }} vulnerabilities found, verdict: {{ verdict }}. Includes license check, dependency data, and GitHub metrics.{% endblock %}
+{% block meta_keywords %}{{ package }} vulnerability, {{ package }} security, {{ package }} CVE, {{ ecosystem }} package safety, {{ package }} license, open source security{% endblock %}
+{% block meta_robots %}{% if verdict == 'Error' %}noindex, follow{% else %}index, follow{% endif %}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ package }} – Security Report | Library Safety Checker{% endblock %}
+{% block og_description %}{{ verdict }} verdict for {{ package }} v{{ meta.version if meta else 'unknown' }}. {{ vulns|length }} vulnerabilities found. License: {{ meta.license if meta else 'unknown' }}. Powered by OSV, PyPI, and GitHub data.{% endblock %}
+{% block tw_title %}{{ package }} Security Report – {{ verdict }}{% endblock %}
+{% block tw_description %}{{ vulns|length }} vulnerabilities found in {{ package }}. Verdict: {{ verdict }}. Check license compliance and dependency health on Library Safety Checker.{% endblock %}
+{% block canonical_url %}https://ibrary-safety-checker-production.up.railway.app/search?package={{ package }}&ecosystem={{ ecosystem }}{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "{{ package }} Security Report – {{ verdict }}",
+  "description": "Security analysis for {{ package }}: {{ vulns|length }} vulnerabilities found. Verdict: {{ verdict }}.",
+  "url": "https://ibrary-safety-checker-production.up.railway.app/search?package={{ package }}&ecosystem={{ ecosystem }}",
+  "dateModified": "{{ now().strftime('%Y-%m-%d') if now is defined else '' }}",
+  "publisher": {
+    "@id": "https://ibrary-safety-checker-production.up.railway.app/#organization"
+  },
+  "about": {
+    "@type": "SoftwareApplication",
+    "name": "{{ package }}",
+    "applicationCategory": "DeveloperApplication",
+    "softwareVersion": "{{ meta.version if meta else 'unknown' }}",
+    "license": "{{ meta.license if meta else 'unknown' }}"
+  }
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto px-4 py-10">

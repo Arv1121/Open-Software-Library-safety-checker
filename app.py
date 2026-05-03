@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, make_response
 from flask_cors import CORS
 import requests
 from datetime import datetime, timedelta
@@ -485,6 +485,75 @@ def api_export_json(package):
 @track_visitor
 def terms():
     return render_template("terms.html", now=datetime.utcnow())
+
+
+# ── SEO routes ─────────────────────────────────────────────────────────────────
+
+BASE_URL = "https://ibrary-safety-checker-production.up.railway.app"
+
+@app.route("/robots.txt")
+def robots_txt():
+    content = f"""User-agent: *
+Allow: /
+Disallow: /api/
+Crawl-delay: 2
+
+Sitemap: {BASE_URL}/sitemap.xml
+Sitemap: {BASE_URL}/sitemap-packages.xml
+"""
+    response = make_response(content)
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
+    response.headers["Cache-Control"] = "public, max-age=86400"
+    return response
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    now = datetime.utcnow().strftime("%Y-%m-%d")
+    pages = [
+        {"loc": f"{BASE_URL}/",          "priority": "1.0", "changefreq": "daily",   "lastmod": now},
+        {"loc": f"{BASE_URL}/dashboard", "priority": "0.9", "changefreq": "hourly",  "lastmod": now},
+        {"loc": f"{BASE_URL}/compare",   "priority": "0.7", "changefreq": "weekly",  "lastmod": now},
+        {"loc": f"{BASE_URL}/terms",     "priority": "0.3", "changefreq": "monthly", "lastmod": now},
+    ]
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for page in pages:
+        xml_parts.append(
+            f"  <url>\n"
+            f"    <loc>{page['loc']}</loc>\n"
+            f"    <lastmod>{page['lastmod']}</lastmod>\n"
+            f"    <changefreq>{page['changefreq']}</changefreq>\n"
+            f"    <priority>{page['priority']}</priority>\n"
+            f"  </url>"
+        )
+    xml_parts.append("</urlset>")
+    response = make_response("\n".join(xml_parts))
+    response.headers["Content-Type"] = "application/xml; charset=utf-8"
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@app.route("/sitemap-packages.xml")
+def sitemap_packages_xml():
+    now = datetime.utcnow().strftime("%Y-%m-%d")
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+                 '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    # Static search result pages for all known popular packages
+    for pkg in POPULAR_PACKAGES:
+        xml_parts.append(
+            f"  <url>\n"
+            f"    <loc>{BASE_URL}/search?package={pkg}&amp;ecosystem=PyPI</loc>\n"
+            f"    <lastmod>{now}</lastmod>\n"
+            f"    <changefreq>weekly</changefreq>\n"
+            f"    <priority>0.6</priority>\n"
+            f"  </url>"
+        )
+    xml_parts.append("</urlset>")
+    response = make_response("\n".join(xml_parts))
+    response.headers["Content-Type"] = "application/xml; charset=utf-8"
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 if __name__ == "__main__":

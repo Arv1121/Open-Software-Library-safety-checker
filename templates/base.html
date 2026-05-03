@@ -2,25 +2,35 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="{% block meta_description %}Library Safety Checker – real-time vulnerability scanning, dependency analysis, and security scoring for open-source packages.{% endblock %}">
-  <meta name="keywords" content="{% block meta_keywords %}library safety, package security, vulnerability scanner, OSV, PyPI, open source{% endblock %}">
-  <meta name="robots" content="index, follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="{% block meta_description %}Library Safety Checker – real-time vulnerability scanning, dependency analysis, and security scoring for open-source packages. Check PyPI, npm, and Maven packages instantly.{% endblock %}">
+  <meta name="keywords" content="{% block meta_keywords %}library safety checker, package security, vulnerability scanner, OSV database, PyPI security, open source vulnerabilities, dependency analysis, CVE checker, npm security, python package safety{% endblock %}">
+  <meta name="author" content="Library Safety Checker">
+  <meta name="robots" content="{% block meta_robots %}index, follow{% endblock %}">
   <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Library Safety Checker">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="{% block canonical_url %}https://ibrary-safety-checker-production.up.railway.app{{ request.path }}{% endblock %}">
 
   <!-- Open Graph -->
-  <meta property="og:type"        content="website">
+  <meta property="og:type"        content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name"   content="Library Safety Checker">
-  <meta property="og:title"       content="{% block og_title %}Library Safety Checker{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Real-time vulnerability scanning and security scoring for open-source packages.{% endblock %}">
-  <meta property="og:url"         content="{{ request.url }}">
+  <meta property="og:title"       content="{% block og_title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Instantly scan open-source packages for vulnerabilities, check licenses, and analyze dependencies. Powered by OSV, PyPI, and GitHub data.{% endblock %}">
+  <meta property="og:url"         content="https://ibrary-safety-checker-production.up.railway.app{{ request.path }}">
+  <meta property="og:locale"      content="en_US">
 
   <!-- Twitter Card -->
-  <meta name="twitter:card"        content="summary">
-  <meta name="twitter:title"       content="{% block tw_title %}Library Safety Checker{% endblock %}">
-  <meta name="twitter:description" content="{% block tw_description %}Real-time vulnerability scanning for open-source packages.{% endblock %}">
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:site"        content="@LibrarySafety">
+  <meta name="twitter:title"       content="{% block tw_title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}">
+  <meta name="twitter:description" content="{% block tw_description %}Instantly scan open-source packages for known vulnerabilities, license issues, and maintenance status. Free, real-time, powered by OSV.{% endblock %}">
 
-  <title>{% block title %}Library Safety Checker{% endblock %}</title>
+  <title>{% block title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -28,6 +38,66 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/enhanced.css') }}">
+
+  <!-- JSON-LD Structured Data: Organization + WebApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://ibrary-safety-checker-production.up.railway.app/#organization",
+        "name": "Library Safety Checker",
+        "url": "https://ibrary-safety-checker-production.up.railway.app",
+        "description": "Free open-source package vulnerability scanner powered by OSV, PyPI, and GitHub data.",
+        "sameAs": ["https://github.com/Arv1121/ibrary-safety-checker"]
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://ibrary-safety-checker-production.up.railway.app/#webapp",
+        "name": "Library Safety Checker",
+        "url": "https://ibrary-safety-checker-production.up.railway.app",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript",
+        "description": "Real-time vulnerability scanning, dependency analysis, and security scoring for open-source packages across PyPI, npm, and Maven ecosystems.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "publisher": {
+          "@id": "https://ibrary-safety-checker-production.up.railway.app/#organization"
+        },
+        "featureList": [
+          "CVE vulnerability scanning via OSV database",
+          "License compliance checking",
+          "Dependency and dependent count analysis",
+          "GitHub repository metrics",
+          "Side-by-side package comparison",
+          "JSON export of security reports"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://ibrary-safety-checker-production.up.railway.app/#website",
+        "url": "https://ibrary-safety-checker-production.up.railway.app",
+        "name": "Library Safety Checker",
+        "publisher": {
+          "@id": "https://ibrary-safety-checker-production.up.railway.app/#organization"
+        },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://ibrary-safety-checker-production.up.railway.app/search?package={search_term_string}&ecosystem=PyPI"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
 
   {% block extra_head %}{% endblock %}
 </head>
