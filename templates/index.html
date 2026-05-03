@@ -1,39 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Library Safety Checker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .hover-lift { transition: transform 0.3s, box-shadow 0.3s; }
-        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white min-h-screen">
-    <!-- Navigation -->
-    <nav class="bg-slate-800/50 backdrop-blur border-b border-slate-700 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold gradient-text">📦 Library Safety Checker</h1>
-            <a href="/dashboard" class="px-4 py-2 rounded-lg hover:bg-slate-700 transition">Dashboard</a>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
+{% block title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}
+{% block meta_description %}Free open-source package vulnerability scanner. Instantly check PyPI, npm, and Maven packages for CVEs, license issues, and maintenance status using the OSV database.{% endblock %}
+{% block meta_keywords %}library safety checker, package vulnerability scanner, PyPI security check, npm vulnerability scan, open source CVE checker, OSV database, python package security, dependency vulnerability analysis{% endblock %}
+{% block og_title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}
+{% block og_description %}Instantly scan any open-source package for known CVEs, license compliance issues, and maintenance health. Free, real-time results powered by OSV, PyPI, and GitHub.{% endblock %}
+{% block tw_title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}
+{% block tw_description %}Scan PyPI, npm, and Maven packages for CVEs and security issues in seconds. Free tool powered by the OSV vulnerability database.{% endblock %}
+{% block canonical_url %}https://ibrary-safety-checker-production.up.railway.app/{% endblock %}
+
+{% block extra_head %}
+  <!-- Page-level JSON-LD: FAQ rich snippet for homepage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is Library Safety Checker?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Library Safety Checker is a free tool that scans open-source packages for known vulnerabilities (CVEs), license compliance issues, and maintenance health using the OSV database, PyPI, and GitHub data."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which package ecosystems are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Library Safety Checker supports PyPI (Python), npm (JavaScript), and Maven (Java) package ecosystems."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the vulnerability scanning work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Vulnerability data is fetched in real-time from the OSV (Open Source Vulnerabilities) database, which aggregates CVEs and security advisories from multiple sources including GitHub Security Advisories, NVD, and more."
+        }
+      }
+    ]
+  }
+  </script>
+{% endblock %}
+
+{% block content %}
     <!-- Hero Section -->
     <div class="max-w-6xl mx-auto px-4 py-20">
         <div class="text-center mb-12">
-            <h2 class="text-5xl font-bold mb-4">Check Package Security</h2>
+            <h1 class="text-5xl font-bold mb-4">Check Package Security</h1>
             <p class="text-xl text-slate-400">Analyze vulnerabilities, dependencies, and maintenance status of open-source packages</p>
         </div>
 
@@ -94,75 +110,9 @@
         </div>
     </div>
 
-    <script>
-        // Load and display recent searches
-        function loadRecent() {
-            let recent = JSON.parse(localStorage.getItem('recent') || '[]');
-            let html = recent.slice(-4).reverse().map(pkg => 
-                `<a href="/search" onclick="document.querySelector('input[name=package]').value='${pkg}'; document.querySelector('form').submit(); return false;" 
-                    class="glass hover-lift rounded-lg p-3 text-center hover:bg-slate-700/50 transition">
-                    ${pkg}
-                </a>`
-            ).join('');
-            document.getElementById('recent').innerHTML = html || '<p class="text-slate-400 col-span-full">No recent searches</p>';
-        }
-        
-        // Save search on form submit
-        document.querySelector('form').addEventListener('submit', function() {
-            let pkg = document.querySelector('input[name=package]').value;
-            let recent = JSON.parse(localStorage.getItem('recent') || '[]');
-            if (!recent.includes(pkg)) recent.push(pkg);
-            localStorage.setItem('recent', JSON.stringify(recent.slice(-10)));
-        });
-        
-        loadRecent();
-    </script>
+{% endblock %}
 
-<!-- Add this to the footer section before closing body tag -->
-<footer class="bg-slate-800/50 backdrop-blur border-t border-slate-700 mt-16">
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <!-- Live Stats Section -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div class="text-center">
-                <p class="text-3xl font-bold text-blue-400" id="live-visitors">{{ stats.unique_visitors }}</p>
-                <p class="text-slate-400">Unique Visitors</p>
-            </div>
-            <div class="text-center">
-                <p class="text-3xl font-bold text-purple-400" id="live-searches">{{ stats.total_searches }}</p>
-                <p class="text-slate-400">Total Searches</p>
-            </div>
-            <div class="text-center">
-                <p class="text-3xl font-bold text-green-400">{{ POPULAR_PACKAGES|length }}</p>
-                <p class="text-slate-400">Packages Tracked</p>
-            </div>
-        </div>
-
-        <!-- Trending Packages Section -->
-        <div class="border-t border-slate-600 pt-8 mb-8">
-            <h3 class="text-lg font-bold mb-4">🔥 Trending Now</h3>
-            <div id="trending-packages" class="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <p class="text-slate-400 col-span-full text-sm">Loading trending packages...</p>
-            </div>
-        </div>
-
-        <!-- Vulnerability Alerts Section -->
-        <div class="border-t border-slate-600 pt-8 mb-8">
-            <h3 class="text-lg font-bold mb-4">⚠️ Security Alerts</h3>
-            <div id="vulnerability-alerts" class="space-y-2">
-                <p class="text-slate-400 text-sm">Checking for vulnerabilities...</p>
-            </div>
-        </div>
-
-        <div class="border-t border-slate-600 pt-8 flex justify-between items-center">
-            <p class="text-slate-400">© 2026 Library Safety Checker. All rights reserved.</p>
-            <div class="flex gap-6">
-                <a href="/terms" class="text-slate-400 hover:text-white transition">Terms & Conditions</a>
-                <a href="https://github.com/Arv1121/ibrary-safety-checker" target="_blank" class="text-slate-400 hover:text-white transition">GitHub</a>
-            </div>
-        </div>
-    </div>
-</footer>
-
+{% block extra_scripts %}
 <script>
     // Load and display recent searches
     function loadRecent() {
@@ -261,5 +211,4 @@
     setInterval(updateTrendingPackages, 10000);
     setInterval(updateVulnerabilityAlerts, 30000);
 </script>
-</body>
-</html>
+{% endblock %}

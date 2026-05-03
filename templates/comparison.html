@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Compare Packages – Library Safety Checker{% endblock %}
-{% block meta_description %}Side-by-side security comparison of Python packages. Compare vulnerabilities, licenses, GitHub stats, and safety verdicts.{% endblock %}
-{% block og_title %}Package Comparison – Library Safety Checker{% endblock %}
+{% block title %}{% if pkgs %}Compare {{ pkgs | join(' vs ') }} – Security Analysis{% else %}Compare Python Packages – Library Safety Checker{% endif %}{% endblock %}
+{% block meta_description %}{% if pkgs %}Side-by-side security comparison of {{ pkgs | join(', ') }}: vulnerabilities, licenses, GitHub stats, and safety verdicts.{% else %}Compare up to 3 open-source packages side by side. Analyze vulnerabilities, licenses, GitHub metrics, and safety verdicts.{% endif %}{% endblock %}
+{% block meta_keywords %}compare python packages, package security comparison, vulnerability comparison, open source package analysis, PyPI package comparison{% endblock %}
+{% block meta_robots %}{% if pkgs %}index, follow{% else %}noindex, follow{% endif %}{% endblock %}
+{% block og_title %}{% if pkgs %}{{ pkgs | join(' vs ') }} – Security Comparison{% else %}Package Comparison – Library Safety Checker{% endif %}{% endblock %}
+{% block og_description %}{% if pkgs %}Compare security profiles of {{ pkgs | join(', ') }}: vulnerability counts, license compliance, and GitHub health metrics.{% else %}Compare up to 3 open-source packages side by side on Library Safety Checker.{% endif %}{% endblock %}
+{% block tw_title %}{% if pkgs %}{{ pkgs | join(' vs ') }} Security Comparison{% else %}Compare Python Packages – Library Safety Checker{% endif %}{% endblock %}
+{% block canonical_url %}https://ibrary-safety-checker-production.up.railway.app/compare{% if pkgs %}?{% for p in pkgs %}pkg={{ p }}{% if not loop.last %}&{% endif %}{% endfor %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-10">
