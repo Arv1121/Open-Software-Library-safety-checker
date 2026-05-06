@@ -489,7 +489,16 @@ def terms():
 
 # ── SEO routes ─────────────────────────────────────────────────────────────────
 
-BASE_URL = "https://ibrary-safety-checker-production.up.railway.app"
+BASE_URL = "https://ibrary-safety-checker-production-1526.up.railway.app"
+
+@app.route("/googleef147e2249f09263.html")
+def google_verification():
+    """Serve Google Search Console HTML verification file."""
+    content = "google-site-verification: googleef147e2249f09263.html"
+    response = make_response(content)
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
+    return response
+
 
 @app.route("/robots.txt")
 def robots_txt():
