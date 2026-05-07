@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}OSS Security Dashboard – Library Safety Checker{% endblock %}
-{% block meta_description %}Real-time security dashboard for popular Python packages. View vulnerability counts, license status, and safety verdicts for Flask, Django, Requests, NumPy, and more.{% endblock %}
-{% block meta_keywords %}python package security dashboard, OSS vulnerability dashboard, Flask security, Django vulnerabilities, PyPI package safety, open source security monitoring{% endblock %}
-{% block og_title %}OSS Security Dashboard – Library Safety Checker{% endblock %}
-{% block og_description %}Real-time security status for popular Python packages including Flask, Django, Requests, NumPy, and more. Filter by verdict, sort by vulnerabilities.{% endblock %}
-{% block tw_title %}OSS Security Dashboard – Library Safety Checker{% endblock %}
-{% block tw_description %}Monitor security status of popular Python packages in real time. Vulnerability counts, license checks, and safety verdicts at a glance.{% endblock %}
+{% block meta_description %}Real-time security dashboard for popular packages across all ecosystems. View vulnerability counts, license status, and safety verdicts for PyPI, npm, Maven, Go, Rust, NuGet, RubyGems, Composer, and AI/ML packages.{% endblock %}
+{% block meta_keywords %}package security dashboard, OSS vulnerability dashboard, multi-ecosystem security, PyPI npm Maven Go Rust NuGet security, AI ML package safety, tensorflow pytorch security, open source security monitoring{% endblock %}
+{% block og_title %}OSS Security Dashboard – Multi-Ecosystem Package Safety{% endblock %}
+{% block og_description %}Real-time security status for popular packages across PyPI, npm, Maven, Go, Rust, NuGet, RubyGems, Composer, and AI/ML ecosystems. Filter by verdict, sort by vulnerabilities.{% endblock %}
+{% block tw_title %}OSS Security Dashboard – Multi-Ecosystem Package Safety{% endblock %}
+{% block tw_description %}Monitor security status of packages across 8 ecosystems in real time. Full AI/ML coverage: TensorFlow, PyTorch, scikit-learn, Hugging Face, and more.{% endblock %}
 {% block canonical_url %}https://ibrary-safety-checker-production.up.railway.app/dashboard{% endblock %}
 
 {% block extra_head %}
@@ -45,7 +45,7 @@
   <div class="flex flex-wrap items-center justify-between gap-4 mb-8 fade-in-up">
     <div>
       <h1 class="text-4xl font-extrabold mb-1">📚 OSS Dashboard</h1>
-      <p class="text-slate-400">Security status for popular Python packages</p>
+      <p class="text-slate-400">Security status for popular packages across all ecosystems</p>
     </div>
     <div class="flex gap-2 no-print">
       <button id="go-compare-btn"
@@ -85,6 +85,40 @@
     <div class="stat-counter" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">
       <div class="number" data-count="{{ total_vulns }}">{{ total_vulns }}</div>
       <div class="label">Total Vulns</div>
+    </div>
+  </div>
+
+  <!-- ── Ecosystem Tabs ────────────────────────────────────── -->
+  <div class="glass rounded-2xl p-4 mb-6 no-print">
+    <p class="text-xs text-slate-500 font-bold uppercase tracking-wide mb-3">Browse by Ecosystem</p>
+    <div class="flex flex-wrap gap-2">
+      {% for eco in ecosystems %}
+      <a href="/api/packages/ecosystem/{{ eco.id }}" target="_blank"
+         class="px-3 py-1.5 rounded-full bg-slate-700 hover:bg-blue-600 text-sm font-medium transition border border-slate-600 hover:border-blue-500">
+        {{ eco.icon }} {{ eco.label }}
+        <span class="text-xs text-slate-400 ml-1">({{ ecosystem_packages[eco.id]|length }})</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── AI/ML Packages Section ─────────────────────────────── -->
+  <div class="glass rounded-2xl p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold">🤖 AI/ML Packages</h2>
+      <span class="text-xs text-slate-400 bg-purple-900/40 px-2 py-1 rounded-full border border-purple-700/40">{{ ai_ml_packages|length }} packages</span>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      {% for pkg in ai_ml_packages %}
+      <form action="/search" method="POST" class="inline">
+        <input type="hidden" name="package" value="{{ pkg }}">
+        <input type="hidden" name="ecosystem" value="PyPI">
+        <button type="submit"
+                class="px-2.5 py-1 rounded-lg bg-purple-900/40 hover:bg-purple-700/60 text-xs font-mono border border-purple-700/40 hover:border-purple-500 transition text-purple-200">
+          {{ pkg }}
+        </button>
+      </form>
+      {% endfor %}
     </div>
   </div>
 
@@ -180,7 +214,7 @@
       <div class="px-5 py-3 flex gap-2">
         <form action="/search" method="POST" class="flex-1">
           <input type="hidden" name="package" value="{{ pkg.name }}">
-          <input type="hidden" name="ecosystem" value="PyPI">
+          <input type="hidden" name="ecosystem" value="{{ pkg.ecosystem or 'PyPI' }}">
           <button type="submit"
             class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl transition text-sm">
             View Report

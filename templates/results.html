@@ -269,8 +269,48 @@
 
     <!-- Ecosystem / GitHub -->
     <div class="glass rounded-2xl p-6">
-      <h2 class="text-xl font-bold mb-5">🔗 Ecosystem</h2>
+      <h2 class="text-xl font-bold mb-5">🔗 Ecosystem &amp; Registry</h2>
       <div class="space-y-4 text-sm">
+
+        <!-- Registry link -->
+        {% if meta and meta.project_url %}
+        <div>
+          <p class="text-slate-400 text-xs uppercase tracking-wide mb-0.5">Registry Page</p>
+          <a href="{{ meta.project_url }}" target="_blank" rel="noopener"
+             class="text-blue-400 hover:underline break-all">{{ meta.project_url }}</a>
+        </div>
+        {% endif %}
+
+        <!-- Ecosystem-specific vulnerability sources -->
+        <div>
+          <p class="text-slate-400 text-xs uppercase tracking-wide mb-1">Vulnerability Sources</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">OSV Database</span>
+            {% if ecosystem == 'PyPI' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">PyPI Advisory</span>
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">GitHub SA</span>
+            {% elif ecosystem == 'npm' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">npm Advisory</span>
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">GitHub SA</span>
+            {% elif ecosystem == 'Maven' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">Maven Central</span>
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">NVD</span>
+            {% elif ecosystem == 'crates.io' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">RustSec</span>
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">GitHub SA</span>
+            {% elif ecosystem == 'NuGet' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">NuGet Advisory</span>
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">NVD</span>
+            {% elif ecosystem == 'Go' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">Go Vuln DB</span>
+            {% elif ecosystem == 'RubyGems' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">RubyGems Advisory</span>
+            {% elif ecosystem == 'Packagist' %}
+              <span class="px-2 py-0.5 rounded bg-slate-700 text-xs">PHP Security</span>
+            {% endif %}
+          </div>
+        </div>
+
         <div class="flex justify-between items-center">
           <span class="text-slate-400">Dependencies</span>
           <span class="font-bold text-lg">{{ deps_data.dependencies or 0 }}</span>
@@ -306,6 +346,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- ── Service stats strip ───────────────────────────────── -->
   <div class="glass rounded-2xl p-6 mb-8">
