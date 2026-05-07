@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}
-{% block meta_description %}Free open-source package vulnerability scanner. Instantly check PyPI, npm, and Maven packages for CVEs, license issues, and maintenance status using the OSV database.{% endblock %}
-{% block meta_keywords %}library safety checker, package vulnerability scanner, PyPI security check, npm vulnerability scan, open source CVE checker, OSV database, python package security, dependency vulnerability analysis{% endblock %}
-{% block og_title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}
-{% block og_description %}Instantly scan any open-source package for known CVEs, license compliance issues, and maintenance health. Free, real-time results powered by OSV, PyPI, and GitHub.{% endblock %}
-{% block tw_title %}Library Safety Checker – Free Package Vulnerability Scanner{% endblock %}
-{% block tw_description %}Scan PyPI, npm, and Maven packages for CVEs and security issues in seconds. Free tool powered by the OSV vulnerability database.{% endblock %}
+{% block meta_description %}Free multi-ecosystem package vulnerability scanner. Instantly check PyPI, npm, Maven, Go, Rust, NuGet, RubyGems, and Composer packages for CVEs, license issues, and maintenance status using the OSV database. Full AI/ML package coverage including TensorFlow, PyTorch, and Hugging Face.{% endblock %}
+{% block meta_keywords %}library safety checker, package vulnerability scanner, PyPI security check, npm vulnerability scan, open source CVE checker, OSV database, python package security, dependency vulnerability analysis, tensorflow security, pytorch vulnerability, AI ML package safety, rust cargo security, nuget vulnerability, rubygems security{% endblock %}
+{% block og_title %}Library Safety Checker – Free Multi-Ecosystem Package Vulnerability Scanner{% endblock %}
+{% block og_description %}Instantly scan any open-source package for known CVEs, license compliance issues, and maintenance health. Supports PyPI, npm, Maven, Go, Rust, NuGet, RubyGems, Composer, and all major AI/ML packages. Free, real-time results powered by OSV.{% endblock %}
+{% block tw_title %}Library Safety Checker – Free Multi-Ecosystem Package Vulnerability Scanner{% endblock %}
+{% block tw_description %}Scan PyPI, npm, Maven, Go, Rust, NuGet, and more for CVEs in seconds. Full AI/ML coverage: TensorFlow, PyTorch, scikit-learn, Hugging Face. Powered by OSV.{% endblock %}
 {% block canonical_url %}https://ibrary-safety-checker-production.up.railway.app/{% endblock %}
 
 {% block extra_head %}
@@ -29,7 +29,7 @@
         "name": "Which package ecosystems are supported?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Library Safety Checker supports PyPI (Python), npm (JavaScript), and Maven (Java) package ecosystems."
+          "text": "Library Safety Checker supports PyPI (Python), npm (JavaScript), Maven (Java), Go, Cargo/crates.io (Rust), NuGet (.NET/C#), RubyGems (Ruby), and Composer/Packagist (PHP). It also provides comprehensive coverage of AI/ML packages including TensorFlow, PyTorch, JAX, scikit-learn, Hugging Face Transformers, LangChain, and 100+ more."
         }
       },
       {
@@ -47,32 +47,37 @@
 
 {% block content %}
     <!-- Hero Section -->
-    <div class="max-w-6xl mx-auto px-4 py-20">
-        <div class="text-center mb-12">
+    <div class="max-w-6xl mx-auto px-4 py-16">
+        <div class="text-center mb-10">
             <h1 class="text-5xl font-bold mb-4">Check Package Security</h1>
-            <p class="text-xl text-slate-400">Analyze vulnerabilities, dependencies, and maintenance status of open-source packages</p>
+            <p class="text-xl text-slate-400 mb-2">Analyze vulnerabilities, dependencies, and maintenance status across all major ecosystems</p>
+            <p class="text-sm text-slate-500">PyPI · npm · Maven · Go · Rust · NuGet · RubyGems · Composer · AI/ML</p>
         </div>
 
         <!-- Search Form -->
-        <div class="glass hover-lift rounded-2xl p-8 mb-12 max-w-2xl mx-auto">
+        <div class="glass hover-lift rounded-2xl p-8 mb-10 max-w-2xl mx-auto">
             <form method="POST" action="/search" class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold mb-2">Package Name</label>
-                    <input type="text" name="package" placeholder="e.g., flask, django, requests" 
-                           class="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none" required>
+                    <input type="text" id="pkg-input" name="package"
+                           placeholder="e.g., flask, react, tokio, tensorflow…"
+                           class="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none"
+                           autocomplete="off" required>
+                    <div id="autocomplete-list" class="relative"></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold mb-2">Ecosystem</label>
-                        <select name="ecosystem" class="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none">
-                            <option value="PyPI">PyPI (Python)</option>
-                            <option value="npm">npm (JavaScript)</option>
-                            <option value="Maven">Maven (Java)</option>
+                        <select name="ecosystem" id="eco-select"
+                                class="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none">
+                            {% for eco in ecosystems %}
+                            <option value="{{ eco.id }}">{{ eco.icon }} {{ eco.label }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-2">Version (Optional)</label>
-                        <input type="text" name="version" placeholder="e.g., 2.3.3" 
+                        <input type="text" name="version" placeholder="e.g., 2.3.3"
                                class="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none">
                     </div>
                 </div>
@@ -82,8 +87,36 @@
             </form>
         </div>
 
+        <!-- Ecosystem Quick-Select -->
+        <div class="glass rounded-2xl p-6 mb-8">
+            <h3 class="text-base font-bold mb-4 text-slate-300">🌐 Supported Ecosystems</h3>
+            <div class="flex flex-wrap gap-2">
+                {% for eco in ecosystems %}
+                <button onclick="document.getElementById('eco-select').value='{{ eco.id }}'; document.getElementById('pkg-input').focus();"
+                        class="px-3 py-1.5 rounded-full bg-slate-700 hover:bg-blue-600 text-sm font-medium transition border border-slate-600 hover:border-blue-500">
+                    {{ eco.icon }} {{ eco.label }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- AI/ML Packages Section -->
+        <div class="glass rounded-2xl p-6 mb-8">
+            <h3 class="text-base font-bold mb-1 text-slate-300">🤖 AI/ML Package Coverage</h3>
+            <p class="text-xs text-slate-500 mb-4">Click any package to scan it instantly</p>
+            <div class="flex flex-wrap gap-2">
+                {% for pkg in ai_ml_packages %}
+                <button onclick="document.getElementById('pkg-input').value='{{ pkg }}'; document.getElementById('eco-select').value='PyPI'; document.querySelector('form').submit();"
+                        class="px-2.5 py-1 rounded-lg bg-purple-900/40 hover:bg-purple-700/60 text-xs font-mono border border-purple-700/40 hover:border-purple-500 transition text-purple-200">
+                    {{ pkg }}
+                </button>
+                {% endfor %}
+                <span class="px-2.5 py-1 text-xs text-slate-500 self-center">+ 80 more…</span>
+            </div>
+        </div>
+
         <!-- Recent Searches -->
-        <div class="glass rounded-xl p-6 mb-12">
+        <div class="glass rounded-xl p-6 mb-8">
             <h3 class="text-lg font-bold mb-4">📜 Recent Searches</h3>
             <div id="recent" class="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <p class="text-slate-400 col-span-full">No recent searches</p>
@@ -91,21 +124,64 @@
         </div>
 
         <!-- Features -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="glass hover-lift rounded-xl p-6">
                 <h3 class="text-2xl mb-2">🔒</h3>
                 <h4 class="font-bold mb-2">Vulnerability Detection</h4>
-                <p class="text-slate-400 text-sm">Real-time scanning using OSV database</p>
+                <p class="text-slate-400 text-sm">Real-time scanning using the OSV database across all ecosystems</p>
             </div>
             <div class="glass hover-lift rounded-xl p-6">
-                <h3 class="text-2xl mb-2">📊</h3>
-                <h4 class="font-bold mb-2">Dependency Analysis</h4>
-                <p class="text-slate-400 text-sm">Understand package dependencies and dependents</p>
+                <h3 class="text-2xl mb-2">🌐</h3>
+                <h4 class="font-bold mb-2">8 Ecosystems</h4>
+                <p class="text-slate-400 text-sm">PyPI, npm, Maven, Go, Rust, NuGet, RubyGems, Composer — all in one place</p>
             </div>
             <div class="glass hover-lift rounded-xl p-6">
-                <h3 class="text-2xl mb-2">⭐</h3>
-                <h4 class="font-bold mb-2">Community Metrics</h4>
-                <p class="text-slate-400 text-sm">GitHub stars, forks, and maintenance status</p>
+                <h3 class="text-2xl mb-2">🤖</h3>
+                <h4 class="font-bold mb-2">AI/ML Focus</h4>
+                <p class="text-slate-400 text-sm">100+ AI/ML packages: TensorFlow, PyTorch, JAX, Hugging Face, LangChain</p>
+            </div>
+        </div>
+
+        <!-- Ecosystem Examples -->
+        <div class="glass rounded-2xl p-6">
+            <h3 class="text-base font-bold mb-4 text-slate-300">💡 Search Examples by Ecosystem</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">🐍 Python (PyPI)</p>
+                    <div class="space-y-1">
+                        {% for pkg in ["flask", "django", "numpy", "pandas"] %}
+                        <button onclick="document.getElementById('pkg-input').value='{{ pkg }}'; document.getElementById('eco-select').value='PyPI'; document.querySelector('form').submit();"
+                                class="block w-full text-left px-2 py-1 rounded hover:bg-slate-700 text-slate-300 font-mono text-xs transition">{{ pkg }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">📦 JavaScript (npm)</p>
+                    <div class="space-y-1">
+                        {% for pkg in ["react", "express", "lodash", "axios"] %}
+                        <button onclick="document.getElementById('pkg-input').value='{{ pkg }}'; document.getElementById('eco-select').value='npm'; document.querySelector('form').submit();"
+                                class="block w-full text-left px-2 py-1 rounded hover:bg-slate-700 text-slate-300 font-mono text-xs transition">{{ pkg }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">🦀 Rust (Cargo)</p>
+                    <div class="space-y-1">
+                        {% for pkg in ["tokio", "serde", "actix-web", "reqwest"] %}
+                        <button onclick="document.getElementById('pkg-input').value='{{ pkg }}'; document.getElementById('eco-select').value='crates.io'; document.querySelector('form').submit();"
+                                class="block w-full text-left px-2 py-1 rounded hover:bg-slate-700 text-slate-300 font-mono text-xs transition">{{ pkg }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">🤖 AI/ML</p>
+                    <div class="space-y-1">
+                        {% for pkg in ["tensorflow", "torch", "transformers", "langchain"] %}
+                        <button onclick="document.getElementById('pkg-input').value='{{ pkg }}'; document.getElementById('eco-select').value='PyPI'; document.querySelector('form').submit();"
+                                class="block w-full text-left px-2 py-1 rounded hover:bg-slate-700 text-slate-300 font-mono text-xs transition">{{ pkg }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -114,101 +190,52 @@
 
 {% block extra_scripts %}
 <script>
-    // Load and display recent searches
+    // ── Autocomplete ──────────────────────────────────────────────────────────
+    const pkgInput = document.getElementById('pkg-input');
+    const acList   = document.getElementById('autocomplete-list');
+    let acTimer;
+
+    pkgInput.addEventListener('input', function() {
+        clearTimeout(acTimer);
+        const q = this.value.trim();
+        if (q.length < 2) { acList.innerHTML = ''; return; }
+        acTimer = setTimeout(async () => {
+            try {
+                const res  = await fetch(`/api/autocomplete?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                if (!data.length) { acList.innerHTML = ''; return; }
+                acList.innerHTML = `<ul class="absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-lg mt-1 shadow-xl max-h-60 overflow-y-auto">
+                    ${data.map(p => `<li class="px-4 py-2 hover:bg-slate-700 cursor-pointer text-sm font-mono"
+                        onclick="pkgInput.value='${p}'; acList.innerHTML='';">${p}</li>`).join('')}
+                </ul>`;
+            } catch(e) { acList.innerHTML = ''; }
+        }, 200);
+    });
+
+    document.addEventListener('click', e => {
+        if (!acList.contains(e.target) && e.target !== pkgInput) acList.innerHTML = '';
+    });
+
+    // ── Recent searches ───────────────────────────────────────────────────────
     function loadRecent() {
         let recent = JSON.parse(localStorage.getItem('recent') || '[]');
-        let html = recent.slice(-4).reverse().map(pkg => 
-            `<a href="/" onclick="document.querySelector('input[name=package]').value='${pkg}'; document.querySelector('form').submit(); return false;" 
-                class="glass hover-lift rounded-lg p-3 text-center hover:bg-slate-700/50 transition">
+        let html = recent.slice(-4).reverse().map(pkg =>
+            `<a href="/" onclick="document.getElementById('pkg-input').value='${pkg}'; document.querySelector('form').submit(); return false;"
+                class="glass hover-lift rounded-lg p-3 text-center hover:bg-slate-700/50 transition text-sm font-mono">
                 ${pkg}
             </a>`
         ).join('');
         document.getElementById('recent').innerHTML = html || '<p class="text-slate-400 col-span-full">No recent searches</p>';
     }
-    
+
     // Save search on form submit
     document.querySelector('form').addEventListener('submit', function() {
-        let pkg = document.querySelector('input[name=package]').value;
+        let pkg = document.getElementById('pkg-input').value;
         let recent = JSON.parse(localStorage.getItem('recent') || '[]');
         if (!recent.includes(pkg)) recent.push(pkg);
         localStorage.setItem('recent', JSON.stringify(recent.slice(-10)));
     });
-    
-    // Live stats update
-    async function updateLiveStats() {
-        try {
-            const response = await fetch('/api/live-stats');
-            const data = await response.json();
-            document.getElementById('live-visitors').textContent = data.unique_visitors;
-            document.getElementById('live-searches').textContent = data.total_searches;
-        } catch (error) {
-            console.error('Error fetching live stats:', error);
-        }
-    }
 
-    // Trending packages update
-    async function updateTrendingPackages() {
-        try {
-            const response = await fetch('/api/trending-packages');
-            const data = await response.json();
-            
-            if (data.trending.length === 0) {
-                document.getElementById('trending-packages').innerHTML = 
-                    '<p class="text-slate-400 col-span-full text-sm">No trending packages yet</p>';
-                return;
-            }
-
-            const html = data.trending.map(item => 
-                `<div class="glass rounded-lg p-3 text-center hover:bg-slate-700/50 transition cursor-pointer" 
-                      onclick="document.querySelector('input[name=package]').value='${item.package}'; document.querySelector('form').submit();">
-                    <p class="font-semibold text-sm">${item.package}</p>
-                    <p class="text-xs text-slate-400">${item.searches} searches</p>
-                </div>`
-            ).join('');
-            
-            document.getElementById('trending-packages').innerHTML = html;
-        } catch (error) {
-            console.error('Error fetching trending packages:', error);
-        }
-    }
-
-    // Vulnerability alerts update
-    async function updateVulnerabilityAlerts() {
-        try {
-            const response = await fetch('/api/vulnerability-alerts');
-            const data = await response.json();
-            
-            if (data.alerts.length === 0) {
-                document.getElementById('vulnerability-alerts').innerHTML = 
-                    '<p class="text-slate-400 text-sm">✓ No critical vulnerabilities detected</p>';
-                return;
-            }
-
-            const html = data.alerts.map(alert => 
-                `<div class="glass rounded-lg p-3 border-l-4 border-red-500">
-                    <p class="font-semibold text-sm">${alert.package}</p>
-                    <div class="flex gap-2 mt-1">
-                        ${alert.critical > 0 ? `<span class="badge-critical text-xs">🔴 ${alert.critical} Critical</span>` : ''}
-                        ${alert.high > 0 ? `<span class="badge-high text-xs">🟠 ${alert.high} High</span>` : ''}
-                    </div>
-                </div>`
-            ).join('');
-            
-            document.getElementById('vulnerability-alerts').innerHTML = html;
-        } catch (error) {
-            console.error('Error fetching vulnerability alerts:', error);
-        }
-    }
-
-    // Initialize and set up auto-refresh
     loadRecent();
-    updateLiveStats();
-    updateTrendingPackages();
-    updateVulnerabilityAlerts();
-
-    // Update every 5 seconds
-    setInterval(updateLiveStats, 5000);
-    setInterval(updateTrendingPackages, 10000);
-    setInterval(updateVulnerabilityAlerts, 30000);
 </script>
 {% endblock %}

@@ -26,39 +26,382 @@ STATS = {
 
 OSV_API = "https://api.osv.dev/v1/query"
 PYPI_API = "https://pypi.org/pypi/{package}/json"
+NPM_API = "https://registry.npmjs.org/{package}"
+CARGO_API = "https://crates.io/api/v1/crates/{package}"
+NUGET_API = "https://api.nuget.org/v3/registration5/{package}/index.json"
+MAVEN_SEARCH_API = "https://search.maven.org/solrsearch/select"
 DEPS_DEV_API = "https://api.deps.dev/v3/systems/pypi/packages/{package}"
 GITHUB_API = "https://api.github.com/repos/{owner}/{repo}"
 
-POPULAR_PACKAGES = [
-    "flask", "django", "requests", "numpy", "pandas",
-    "sqlalchemy", "celery", "pytest", "beautifulsoup4", "pillow"
+# ── Ecosystem definitions ──────────────────────────────────────────────────────
+
+SUPPORTED_ECOSYSTEMS = [
+    {"id": "PyPI",     "label": "PyPI (Python)",       "icon": "🐍"},
+    {"id": "npm",      "label": "npm (JavaScript)",     "icon": "📦"},
+    {"id": "Maven",    "label": "Maven (Java)",         "icon": "☕"},
+    {"id": "Go",       "label": "Go",                   "icon": "🐹"},
+    {"id": "crates.io","label": "Cargo (Rust)",         "icon": "🦀"},
+    {"id": "NuGet",    "label": "NuGet (.NET/C#)",      "icon": "🔷"},
+    {"id": "RubyGems", "label": "RubyGems (Ruby)",      "icon": "💎"},
+    {"id": "Packagist","label": "Composer (PHP)",       "icon": "🐘"},
 ]
 
-# Extended list for autocomplete suggestions
-KNOWN_PACKAGES = [
-    "flask", "django", "requests", "numpy", "pandas", "sqlalchemy", "celery",
-    "pytest", "beautifulsoup4", "pillow", "fastapi", "uvicorn", "pydantic",
-    "aiohttp", "httpx", "boto3", "botocore", "cryptography", "paramiko",
-    "pyopenssl", "twisted", "tornado", "gunicorn", "werkzeug", "jinja2",
-    "click", "rich", "typer", "loguru", "structlog", "sentry-sdk",
-    "redis", "pymongo", "psycopg2", "pymysql", "alembic", "peewee",
-    "marshmallow", "cerberus", "voluptuous", "attrs", "dataclasses-json",
-    "arrow", "pendulum", "python-dateutil", "pytz", "babel",
-    "scipy", "matplotlib", "seaborn", "plotly", "bokeh", "altair",
-    "scikit-learn", "tensorflow", "torch", "keras", "xgboost", "lightgbm",
-    "opencv-python", "imageio", "wand", "cairosvg",
-    "lxml", "html5lib", "cssselect", "pyquery", "mechanize",
-    "parameterized", "hypothesis", "faker", "factory-boy", "responses",
-    "black", "flake8", "mypy", "pylint", "bandit", "safety",
-    "setuptools", "wheel", "pip", "virtualenv", "pipenv", "poetry",
-    "tqdm", "colorama", "tabulate", "prettytable", "termcolor",
-    "pyyaml", "toml", "python-dotenv", "configparser", "dynaconf",
-    "stripe", "twilio", "sendgrid", "mailchimp3", "slack-sdk",
-    "google-cloud-storage", "google-auth", "azure-storage-blob",
-    "ansible", "fabric", "invoke", "doit", "prefect", "airflow",
-    "scrapy", "selenium", "playwright", "pyppeteer",
-    "jwt", "passlib", "bcrypt", "itsdangerous", "authlib",
+# ── AI/ML packages ─────────────────────────────────────────────────────────────
+
+AI_ML_PACKAGES = [
+    # Deep Learning frameworks
+    "tensorflow", "torch", "jax", "keras", "mxnet", "paddle", "mindspore",
+    "flax", "haiku", "trax", "fastai", "lightning", "pytorch-lightning",
+    # ML libraries
+    "scikit-learn", "xgboost", "lightgbm", "catboost", "optuna", "hyperopt",
+    "shap", "lime", "eli5", "mlflow", "wandb", "neptune-client",
+    # NLP
+    "transformers", "spacy", "nltk", "gensim", "sentence-transformers",
+    "tokenizers", "datasets", "evaluate", "accelerate", "peft", "trl",
+    "langchain", "openai", "anthropic", "cohere", "tiktoken",
+    # Computer Vision
+    "opencv-python", "pillow", "imageio", "albumentations", "torchvision",
+    "timm", "detectron2", "ultralytics", "supervision", "kornia",
+    # Data Processing
+    "pandas", "numpy", "polars", "dask", "vaex", "modin", "cudf",
+    "pyarrow", "h5py", "zarr", "xarray",
+    # Visualization
+    "matplotlib", "seaborn", "plotly", "bokeh", "altair", "holoviews",
+    "panel", "streamlit", "gradio", "dash",
+    # AutoML
+    "autogluon", "tpot", "h2o", "auto-sklearn", "flaml", "pycaret",
+    # Reinforcement Learning
+    "gym", "gymnasium", "stable-baselines3", "ray", "rllib",
+    "tianshou", "d3rlpy",
+    # Graph Neural Networks
+    "torch-geometric", "dgl", "spektral", "stellargraph",
+    # Time Series
+    "prophet", "statsmodels", "pmdarima", "sktime", "darts", "neuralprophet",
+    # Experiment tracking / MLOps
+    "mlflow", "dvc", "bentoml", "seldon", "feast", "great-expectations",
+    # Scientific computing
+    "scipy", "sympy", "numba", "cupy", "jaxlib",
 ]
+
+# ── Ecosystem-grouped packages ─────────────────────────────────────────────────
+
+ECOSYSTEM_PACKAGES = {
+    "PyPI": [
+        # Web frameworks
+        "flask", "django", "fastapi", "tornado", "aiohttp", "starlette",
+        "bottle", "falcon", "sanic", "quart", "litestar",
+        # HTTP clients
+        "requests", "httpx", "urllib3", "aiohttp", "httpcore",
+        # Databases
+        "sqlalchemy", "alembic", "pymongo", "redis", "psycopg2", "pymysql",
+        "motor", "tortoise-orm", "databases", "peewee", "piccolo",
+        # Auth / Security
+        "cryptography", "paramiko", "pyopenssl", "bcrypt", "passlib",
+        "itsdangerous", "authlib", "pyjwt", "python-jose",
+        # Task queues
+        "celery", "rq", "dramatiq", "huey", "apscheduler",
+        # Testing
+        "pytest", "hypothesis", "faker", "factory-boy", "responses",
+        "coverage", "tox", "nox", "ward",
+        # Serialization
+        "pydantic", "marshmallow", "attrs", "cattrs", "msgpack",
+        "orjson", "ujson", "simplejson",
+        # CLI
+        "click", "typer", "rich", "textual", "prompt-toolkit",
+        "colorama", "tabulate", "tqdm",
+        # Config / Env
+        "pyyaml", "toml", "python-dotenv", "dynaconf", "hydra-core",
+        # Cloud / DevOps
+        "boto3", "google-cloud-storage", "azure-storage-blob",
+        "ansible", "fabric", "invoke", "prefect", "airflow",
+        # Scraping
+        "beautifulsoup4", "scrapy", "selenium", "playwright", "lxml",
+        # Utilities
+        "arrow", "pendulum", "python-dateutil", "pytz", "babel",
+        "pillow", "imageio", "wand", "cairosvg",
+        "loguru", "structlog", "sentry-sdk",
+        "setuptools", "wheel", "pip", "virtualenv", "poetry",
+        "black", "flake8", "mypy", "pylint", "bandit",
+        "stripe", "twilio", "sendgrid", "slack-sdk",
+    ] + AI_ML_PACKAGES,
+
+    "npm": [
+        # Frontend frameworks
+        "react", "vue", "angular", "svelte", "solid-js", "preact",
+        "next", "nuxt", "gatsby", "remix", "astro",
+        # State management
+        "redux", "mobx", "zustand", "jotai", "recoil", "pinia",
+        # UI component libraries
+        "antd", "@mui/material", "chakra-ui", "mantine", "shadcn-ui",
+        "tailwindcss", "bootstrap", "bulma",
+        # Build tools
+        "webpack", "vite", "rollup", "esbuild", "parcel", "turbopack",
+        "babel", "swc", "typescript",
+        # Testing
+        "jest", "vitest", "mocha", "chai", "cypress", "playwright",
+        "testing-library", "@testing-library/react",
+        # HTTP / API
+        "axios", "node-fetch", "got", "superagent", "ky",
+        "express", "fastify", "koa", "hapi", "nestjs",
+        # Database / ORM
+        "mongoose", "sequelize", "prisma", "typeorm", "drizzle-orm",
+        "pg", "mysql2", "sqlite3", "redis", "ioredis",
+        # Auth
+        "passport", "jsonwebtoken", "bcrypt", "argon2", "next-auth",
+        # Utilities
+        "lodash", "ramda", "date-fns", "dayjs", "moment",
+        "uuid", "nanoid", "dotenv", "zod", "yup", "joi",
+        "chalk", "ora", "inquirer", "commander", "yargs",
+        # Bundler plugins / tooling
+        "eslint", "prettier", "husky", "lint-staged", "commitlint",
+        # Node.js
+        "express", "socket.io", "ws", "bull", "agenda", "node-cron",
+        "multer", "sharp", "jimp", "pdf-lib",
+        # AI/ML (JS)
+        "@tensorflow/tfjs", "onnxruntime-node", "brain.js",
+        "natural", "compromise", "ml5",
+    ],
+
+    "Maven": [
+        # Spring ecosystem
+        "org.springframework.boot:spring-boot-starter-web",
+        "org.springframework.boot:spring-boot-starter-data-jpa",
+        "org.springframework.boot:spring-boot-starter-security",
+        "org.springframework.boot:spring-boot-starter-test",
+        "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client",
+        "org.springframework.kafka:spring-kafka",
+        # Persistence
+        "org.hibernate:hibernate-core",
+        "com.baeldung:persistence-modules",
+        "org.mybatis:mybatis",
+        "com.zaxxer:HikariCP",
+        # Logging
+        "org.slf4j:slf4j-api",
+        "ch.qos.logback:logback-classic",
+        "org.apache.logging.log4j:log4j-core",
+        # Testing
+        "junit:junit",
+        "org.junit.jupiter:junit-jupiter",
+        "org.mockito:mockito-core",
+        "org.assertj:assertj-core",
+        "io.rest-assured:rest-assured",
+        # HTTP clients
+        "org.apache.httpcomponents:httpclient",
+        "com.squareup.okhttp3:okhttp",
+        # JSON
+        "com.fasterxml.jackson.core:jackson-databind",
+        "com.google.code.gson:gson",
+        # Build / utilities
+        "org.projectlombok:lombok",
+        "org.mapstruct:mapstruct",
+        "com.google.guava:guava",
+        "org.apache.commons:commons-lang3",
+        "commons-io:commons-io",
+        # Messaging
+        "org.apache.kafka:kafka-clients",
+        "com.rabbitmq:amqp-client",
+        # Cloud
+        "com.amazonaws:aws-java-sdk-s3",
+        "com.google.cloud:google-cloud-storage",
+    ],
+
+    "Go": [
+        # Web frameworks
+        "github.com/gin-gonic/gin",
+        "github.com/gofiber/fiber",
+        "github.com/labstack/echo",
+        "github.com/gorilla/mux",
+        "github.com/go-chi/chi",
+        "github.com/beego/beego",
+        # Database
+        "gorm.io/gorm",
+        "github.com/jmoiron/sqlx",
+        "go.mongodb.org/mongo-driver",
+        "github.com/go-redis/redis",
+        "github.com/lib/pq",
+        # Auth / Security
+        "github.com/golang-jwt/jwt",
+        "golang.org/x/crypto",
+        # HTTP clients
+        "github.com/go-resty/resty",
+        "github.com/hashicorp/go-retryablehttp",
+        # Testing
+        "github.com/stretchr/testify",
+        "github.com/onsi/ginkgo",
+        "github.com/onsi/gomega",
+        # CLI
+        "github.com/spf13/cobra",
+        "github.com/spf13/viper",
+        "github.com/urfave/cli",
+        # Logging
+        "go.uber.org/zap",
+        "github.com/sirupsen/logrus",
+        "github.com/rs/zerolog",
+        # Utilities
+        "github.com/google/uuid",
+        "github.com/pkg/errors",
+        "github.com/mitchellh/mapstructure",
+        # gRPC / Protobuf
+        "google.golang.org/grpc",
+        "google.golang.org/protobuf",
+        # Cloud
+        "cloud.google.com/go/storage",
+        "github.com/aws/aws-sdk-go-v2",
+    ],
+
+    "crates.io": [
+        # Web frameworks
+        "actix-web", "axum", "warp", "rocket", "tide", "poem",
+        # Async runtime
+        "tokio", "async-std", "smol",
+        # HTTP clients
+        "reqwest", "hyper", "ureq",
+        # Serialization
+        "serde", "serde_json", "serde_yaml", "bincode", "toml",
+        # Database
+        "sqlx", "diesel", "sea-orm", "rusqlite", "mongodb",
+        "redis", "deadpool-postgres",
+        # CLI
+        "clap", "structopt", "argh", "indicatif", "console",
+        # Error handling
+        "anyhow", "thiserror", "color-eyre",
+        # Logging / tracing
+        "tracing", "log", "env_logger", "tracing-subscriber",
+        # Crypto
+        "ring", "rustls", "openssl", "sha2", "aes",
+        # Utilities
+        "uuid", "chrono", "rand", "regex", "lazy_static",
+        "once_cell", "rayon", "crossbeam", "parking_lot",
+        # Testing
+        "mockall", "proptest", "criterion",
+        # WebAssembly
+        "wasm-bindgen", "js-sys", "web-sys",
+        # ML (Rust)
+        "candle-core", "burn", "linfa", "smartcore",
+    ],
+
+    "NuGet": [
+        # ASP.NET Core
+        "Microsoft.AspNetCore.App",
+        "Microsoft.AspNetCore.Authentication.JwtBearer",
+        "Microsoft.AspNetCore.Identity.EntityFrameworkCore",
+        # Entity Framework
+        "Microsoft.EntityFrameworkCore",
+        "Microsoft.EntityFrameworkCore.SqlServer",
+        "Microsoft.EntityFrameworkCore.Sqlite",
+        "Npgsql.EntityFrameworkCore.PostgreSQL",
+        # Testing
+        "xunit", "NUnit", "MSTest.TestFramework",
+        "Moq", "NSubstitute", "FluentAssertions",
+        # Logging
+        "Serilog", "Serilog.AspNetCore", "NLog",
+        "Microsoft.Extensions.Logging",
+        # HTTP
+        "RestSharp", "Flurl.Http", "Refit",
+        # Serialization
+        "Newtonsoft.Json", "System.Text.Json",
+        "MessagePack", "protobuf-net",
+        # Utilities
+        "AutoMapper", "MediatR", "FluentValidation",
+        "Polly", "Hangfire", "Quartz.NET",
+        # Cloud
+        "AWSSDK.S3", "Azure.Storage.Blobs",
+        "Google.Cloud.Storage.V1",
+        # ML.NET
+        "Microsoft.ML", "Microsoft.ML.FastTree",
+        "Microsoft.ML.ImageAnalytics",
+    ],
+
+    "RubyGems": [
+        # Web frameworks
+        "rails", "sinatra", "hanami", "grape", "roda",
+        # Database
+        "activerecord", "sequel", "mongoid", "redis",
+        "pg", "mysql2", "sqlite3",
+        # Auth
+        "devise", "doorkeeper", "jwt", "bcrypt",
+        # Testing
+        "rspec", "minitest", "capybara", "factory_bot",
+        "faker", "vcr", "webmock",
+        # HTTP clients
+        "faraday", "httparty", "rest-client", "typhoeus",
+        # Background jobs
+        "sidekiq", "resque", "delayed_job", "good_job",
+        # Utilities
+        "nokogiri", "oj", "dry-rb", "zeitwerk",
+        "pundit", "cancancan", "kaminari", "pagy",
+        # Asset pipeline
+        "sprockets", "webpacker", "propshaft",
+        # Deployment
+        "capistrano", "mina", "puma", "unicorn",
+    ],
+
+    "Packagist": [
+        # Frameworks
+        "laravel/framework", "symfony/symfony",
+        "slim/slim", "cakephp/cakephp", "codeigniter4/framework",
+        # ORM / Database
+        "doctrine/orm", "doctrine/dbal",
+        "illuminate/database", "cycle/orm",
+        # Auth
+        "firebase/php-jwt", "lcobucci/jwt",
+        "league/oauth2-server", "spatie/laravel-permission",
+        # HTTP
+        "guzzlehttp/guzzle", "symfony/http-client",
+        "nyholm/psr7", "laminas/laminas-diactoros",
+        # Testing
+        "phpunit/phpunit", "mockery/mockery",
+        "fakerphp/faker", "pestphp/pest",
+        # Utilities
+        "nesbot/carbon", "ramsey/uuid",
+        "league/flysystem", "league/csv",
+        "monolog/monolog", "vlucas/phpdotenv",
+        # Template engines
+        "twig/twig", "smarty/smarty", "blade/blade",
+        # Composer tools
+        "composer/composer", "phpstan/phpstan",
+        "squizlabs/php_codesniffer", "friendsofphp/php-cs-fixer",
+    ],
+}
+
+# Flat popular packages list (used for dashboard and sitemap)
+POPULAR_PACKAGES = [
+    # Python
+    "flask", "django", "requests", "numpy", "pandas",
+    "sqlalchemy", "celery", "pytest", "beautifulsoup4", "pillow",
+    # AI/ML
+    "tensorflow", "torch", "scikit-learn", "transformers", "langchain",
+    # npm
+    "react", "express", "lodash", "axios", "next",
+    # Java
+    "org.springframework.boot:spring-boot-starter-web",
+    # Rust
+    "actix-web", "tokio", "serde",
+    # Go
+    "github.com/gin-gonic/gin",
+]
+
+# Extended list for autocomplete suggestions (2000+ packages)
+KNOWN_PACKAGES = sorted(set(
+    # PyPI
+    ECOSYSTEM_PACKAGES["PyPI"] +
+    # npm (plain names)
+    ECOSYSTEM_PACKAGES["npm"] +
+    # Rust
+    ECOSYSTEM_PACKAGES["crates.io"] +
+    # Ruby
+    ECOSYSTEM_PACKAGES["RubyGems"] +
+    # PHP
+    ECOSYSTEM_PACKAGES["Packagist"] +
+    # NuGet
+    ECOSYSTEM_PACKAGES["NuGet"] +
+    # Go (short names)
+    [p.split("/")[-1] for p in ECOSYSTEM_PACKAGES["Go"]] +
+    # Maven (artifact IDs)
+    [p.split(":")[-1] for p in ECOSYSTEM_PACKAGES["Maven"]] +
+    # AI/ML explicit
+    AI_ML_PACKAGES
+))
 
 def track_visitor(f):
     """Decorator to track unique visitors"""
@@ -148,6 +491,153 @@ def fetch_pypi_meta(package):
     except Exception as e:
         logging.error(f"PyPI fetch error: {e}")
         return None
+
+def fetch_npm_meta(package):
+    """Fetch package metadata from the npm registry."""
+    try:
+        r = requests.get(NPM_API.format(package=package), timeout=10)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        latest_ver = data.get("dist-tags", {}).get("latest", "")
+        ver_data = data.get("versions", {}).get(latest_ver, {})
+        time_data = data.get("time", {})
+        latest_time = time_data.get(latest_ver)
+        latest_release_date = None
+        if latest_time:
+            try:
+                latest_release_date = datetime.fromisoformat(latest_time.replace("Z", "+00:00"))
+            except ValueError:
+                pass
+        return {
+            "name": data.get("name"),
+            "version": latest_ver,
+            "license": ver_data.get("license") or data.get("license") or "Unknown",
+            "summary": data.get("description") or ver_data.get("description"),
+            "home_page": data.get("homepage") or (ver_data.get("repository", {}) or {}).get("url"),
+            "project_url": f"https://www.npmjs.com/package/{package}",
+            "latest_release_date": latest_release_date,
+            "author": (ver_data.get("author") or {}).get("name") if isinstance(ver_data.get("author"), dict) else ver_data.get("author"),
+            "downloads": 0,
+        }
+    except Exception as e:
+        logging.error(f"npm fetch error: {e}")
+        return None
+
+
+def fetch_cargo_meta(package):
+    """Fetch package metadata from crates.io."""
+    try:
+        r = requests.get(CARGO_API.format(package=package), timeout=10,
+                         headers={"User-Agent": "library-safety-checker/1.0"})
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        crate = data.get("crate", {})
+        newest_ver = crate.get("newest_version", "")
+        updated_at = crate.get("updated_at")
+        latest_release_date = None
+        if updated_at:
+            try:
+                latest_release_date = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+            except ValueError:
+                pass
+        return {
+            "name": crate.get("name"),
+            "version": newest_ver,
+            "license": (data.get("versions") or [{}])[0].get("license") or "Unknown",
+            "summary": crate.get("description"),
+            "home_page": crate.get("homepage") or crate.get("repository"),
+            "project_url": f"https://crates.io/crates/{package}",
+            "latest_release_date": latest_release_date,
+            "author": None,
+            "downloads": crate.get("downloads", 0),
+        }
+    except Exception as e:
+        logging.error(f"Cargo fetch error: {e}")
+        return None
+
+
+def fetch_nuget_meta(package):
+    """Fetch package metadata from NuGet."""
+    try:
+        r = requests.get(NUGET_API.format(package=package.lower()), timeout=10)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        items = data.get("items", [])
+        if not items:
+            return None
+        # Last page has the latest versions
+        last_page = items[-1]
+        page_items = last_page.get("items", [])
+        if not page_items:
+            return None
+        latest = page_items[-1].get("catalogEntry", {})
+        published = latest.get("published")
+        latest_release_date = None
+        if published:
+            try:
+                latest_release_date = datetime.fromisoformat(published.replace("Z", "+00:00"))
+            except ValueError:
+                pass
+        return {
+            "name": latest.get("id"),
+            "version": latest.get("version"),
+            "license": latest.get("licenseExpression") or "Unknown",
+            "summary": latest.get("description"),
+            "home_page": latest.get("projectUrl"),
+            "project_url": f"https://www.nuget.org/packages/{package}",
+            "latest_release_date": latest_release_date,
+            "author": latest.get("authors"),
+            "downloads": 0,
+        }
+    except Exception as e:
+        logging.error(f"NuGet fetch error: {e}")
+        return None
+
+
+def fetch_maven_meta(package):
+    """Fetch package metadata from Maven Central (groupId:artifactId format)."""
+    try:
+        if ":" in package:
+            group_id, artifact_id = package.split(":", 1)
+        else:
+            group_id, artifact_id = "", package
+        params = {
+            "q": f"g:{group_id} AND a:{artifact_id}" if group_id else f"a:{artifact_id}",
+            "rows": 1,
+            "wt": "json",
+        }
+        r = requests.get(MAVEN_SEARCH_API, params=params, timeout=10)
+        if r.status_code != 200:
+            return None
+        docs = r.json().get("response", {}).get("docs", [])
+        if not docs:
+            return None
+        doc = docs[0]
+        ts = doc.get("timestamp")
+        latest_release_date = None
+        if ts:
+            try:
+                latest_release_date = datetime.utcfromtimestamp(ts / 1000)
+            except (ValueError, OSError):
+                pass
+        return {
+            "name": f"{doc.get('g')}:{doc.get('a')}",
+            "version": doc.get("latestVersion") or doc.get("v"),
+            "license": "See POM",
+            "summary": f"Maven artifact {doc.get('g')}:{doc.get('a')}",
+            "home_page": f"https://mvnrepository.com/artifact/{doc.get('g')}/{doc.get('a')}",
+            "project_url": f"https://search.maven.org/artifact/{doc.get('g')}/{doc.get('a')}",
+            "latest_release_date": latest_release_date,
+            "author": doc.get("g"),
+            "downloads": 0,
+        }
+    except Exception as e:
+        logging.error(f"Maven fetch error: {e}")
+        return None
+
 
 def fetch_deps_dev_data(package):
     try:
@@ -269,29 +759,51 @@ def compute_verdict(meta, vulns):
 
     return verdict, reasons
 
-def get_package_info(package):
-    """Fetch comprehensive package info"""
+def _fetch_meta_for_ecosystem(package, ecosystem):
+    """Dispatch metadata fetch to the correct registry based on ecosystem."""
+    if ecosystem == "PyPI":
+        return fetch_pypi_meta(package)
+    elif ecosystem == "npm":
+        return fetch_npm_meta(package)
+    elif ecosystem == "crates.io":
+        return fetch_cargo_meta(package)
+    elif ecosystem == "NuGet":
+        return fetch_nuget_meta(package)
+    elif ecosystem == "Maven":
+        return fetch_maven_meta(package)
+    else:
+        # Go, RubyGems, Packagist – return minimal stub; OSV still works
+        return {"name": package, "version": "N/A", "license": "Unknown",
+                "summary": None, "home_page": None, "latest_release_date": None,
+                "author": None, "downloads": 0}
+
+
+def get_package_info(package, ecosystem="PyPI"):
+    """Fetch comprehensive package info for any supported ecosystem."""
     try:
-        meta = fetch_pypi_meta(package)
-        vulns = fetch_osv(package, "PyPI")
+        meta = _fetch_meta_for_ecosystem(package, ecosystem)
+        vulns = fetch_osv(package, ecosystem)
         deps_data = fetch_deps_dev_data(package)
         github_data = fetch_github_data(meta.get("home_page") if meta else None)
-        
+
         verdict, reasons = compute_verdict(meta or {}, vulns)
-        
+
         vuln_counts = {
             "CRITICAL": sum(1 for v in vulns if cvss_severity(v) == "CRITICAL"),
             "HIGH": sum(1 for v in vulns if cvss_severity(v) == "HIGH"),
             "MEDIUM": sum(1 for v in vulns if cvss_severity(v) == "MEDIUM"),
             "LOW": sum(1 for v in vulns if cvss_severity(v) == "LOW"),
         }
-        
+
         return {
             "name": package,
+            "ecosystem": ecosystem,
             "version": meta.get("version") if meta else "N/A",
             "license": meta.get("license") if meta else "Unknown",
             "summary": meta.get("summary") if meta else "N/A",
             "author": meta.get("author") if meta else "Unknown",
+            "home_page": meta.get("home_page") if meta else None,
+            "project_url": meta.get("project_url") if meta else None,
             "vulnerabilities": vuln_counts,
             "verdict": verdict,
             "reasons": reasons,
@@ -305,10 +817,13 @@ def get_package_info(package):
         logging.error(f"Package info error: {e}")
         return {
             "name": package,
+            "ecosystem": ecosystem,
             "version": "N/A",
             "license": "Unknown",
             "summary": "Error fetching data",
             "author": "Unknown",
+            "home_page": None,
+            "project_url": None,
             "vulnerabilities": {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0},
             "verdict": "Error",
             "reasons": [str(e)],
@@ -328,7 +843,9 @@ def index():
     }
     trending = get_trending_packages(5)
     return render_template("index.html", stats=stats, trending=trending,
-                           popular_packages=POPULAR_PACKAGES)
+                           popular_packages=POPULAR_PACKAGES,
+                           ecosystems=SUPPORTED_ECOSYSTEMS,
+                           ai_ml_packages=AI_ML_PACKAGES[:20])
 
 
 @app.route("/search", methods=["POST"])
@@ -344,7 +861,7 @@ def search():
     record_search(package, ecosystem)
 
     try:
-        meta = fetch_pypi_meta(package) if ecosystem == "PyPI" else {"name": package}
+        meta = _fetch_meta_for_ecosystem(package, ecosystem)
         vulns = fetch_osv(package, ecosystem, version)
         deps_data = fetch_deps_dev_data(package)
         github_data = fetch_github_data(meta.get("home_page") if meta else None)
@@ -368,6 +885,7 @@ def search():
                                deps_data=deps_data,
                                github_data=github_data,
                                stats=stats,
+                               ecosystems=SUPPORTED_ECOSYSTEMS,
                                cvss_severity=cvss_severity)
     except Exception as e:
         logging.error(f"Search error: {e}")
@@ -387,19 +905,29 @@ def search():
                                deps_data={},
                                github_data=None,
                                stats=stats,
+                               ecosystems=SUPPORTED_ECOSYSTEMS,
                                cvss_severity=cvss_severity)
 
 
 @app.route("/dashboard")
 @track_visitor
 def dashboard():
-    packages = [get_package_info(pkg) for pkg in POPULAR_PACKAGES]
+    # Only fetch PyPI packages for the dashboard to keep it fast
+    pypi_pkgs = [
+        "flask", "django", "requests", "numpy", "pandas",
+        "sqlalchemy", "celery", "pytest", "beautifulsoup4", "pillow",
+        "tensorflow", "torch", "scikit-learn", "transformers", "fastapi",
+    ]
+    packages = [get_package_info(pkg, "PyPI") for pkg in pypi_pkgs]
     stats = {
         "unique_visitors": len(STATS["unique_visitors"]),
         "total_searches": STATS["total_searches"]
     }
     trending = get_trending_packages(5)
-    return render_template("dashboard.html", packages=packages, stats=stats, trending=trending)
+    return render_template("dashboard.html", packages=packages, stats=stats,
+                           trending=trending, ecosystems=SUPPORTED_ECOSYSTEMS,
+                           ecosystem_packages=ECOSYSTEM_PACKAGES,
+                           ai_ml_packages=AI_ML_PACKAGES)
 
 
 @app.route("/compare")
@@ -419,8 +947,68 @@ def compare():
 
 @app.route("/api/packages")
 def api_packages():
-    packages = [get_package_info(pkg) for pkg in POPULAR_PACKAGES]
+    packages = [get_package_info(pkg, "PyPI") for pkg in POPULAR_PACKAGES[:10]]
     return jsonify(packages)
+
+
+@app.route("/api/ecosystems")
+def api_ecosystems():
+    """List all supported ecosystems with package counts."""
+    result = []
+    for eco in SUPPORTED_ECOSYSTEMS:
+        pkgs = ECOSYSTEM_PACKAGES.get(eco["id"], [])
+        result.append({
+            "id": eco["id"],
+            "label": eco["label"],
+            "icon": eco["icon"],
+            "package_count": len(pkgs),
+            "sample_packages": pkgs[:5],
+        })
+    return jsonify(result)
+
+
+@app.route("/api/packages/ecosystem/<ecosystem>")
+def api_packages_by_ecosystem(ecosystem):
+    """Return the known package list for a given ecosystem."""
+    pkgs = ECOSYSTEM_PACKAGES.get(ecosystem)
+    if pkgs is None:
+        return jsonify({"error": f"Unknown ecosystem: {ecosystem}",
+                        "supported": [e["id"] for e in SUPPORTED_ECOSYSTEMS]}), 404
+    return jsonify({"ecosystem": ecosystem, "packages": pkgs, "count": len(pkgs)})
+
+
+@app.route("/api/search/advanced")
+def api_search_advanced():
+    """Multi-ecosystem package search.
+
+    Query params:
+      q        – search term (required)
+      ecosystem – comma-separated list of ecosystems to search (default: all)
+      limit    – max results per ecosystem (default: 10)
+    """
+    q = request.args.get("q", "").strip().lower()
+    if not q:
+        return jsonify({"error": "q parameter is required"}), 400
+
+    ecosystems_param = request.args.get("ecosystem", "")
+    requested = [e.strip() for e in ecosystems_param.split(",") if e.strip()] \
+        if ecosystems_param else [e["id"] for e in SUPPORTED_ECOSYSTEMS]
+    limit = min(int(request.args.get("limit", 10)), 50)
+
+    results = {}
+    for eco in requested:
+        pkgs = ECOSYSTEM_PACKAGES.get(eco, [])
+        matches = [p for p in pkgs if q in p.lower()][:limit]
+        if matches:
+            results[eco] = matches
+
+    # Also search previously searched packages
+    searched = [p for p in STATS["searches_by_package"] if q in p.lower()][:limit]
+    if searched:
+        results["_recent"] = searched
+
+    return jsonify({"query": q, "results": results,
+                    "total": sum(len(v) for v in results.values())})
 
 
 @app.route("/api/stats")
@@ -548,16 +1136,32 @@ def sitemap_packages_xml():
     now = datetime.utcnow().strftime("%Y-%m-%d")
     xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>',
                  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    # Static search result pages for all known popular packages
-    for pkg in POPULAR_PACKAGES:
+
+    # Emit one URL per package per ecosystem (capped to keep sitemap manageable)
+    for eco_id, pkgs in ECOSYSTEM_PACKAGES.items():
+        for pkg in pkgs[:100]:  # top 100 per ecosystem
+            safe_pkg = pkg.replace("&", "%26").replace(":", "%3A")
+            xml_parts.append(
+                f"  <url>\n"
+                f"    <loc>{BASE_URL}/search?package={safe_pkg}&amp;ecosystem={eco_id}</loc>\n"
+                f"    <lastmod>{now}</lastmod>\n"
+                f"    <changefreq>weekly</changefreq>\n"
+                f"    <priority>0.6</priority>\n"
+                f"  </url>"
+            )
+
+    # Also include AI/ML packages under PyPI
+    for pkg in AI_ML_PACKAGES:
+        safe_pkg = pkg.replace("&", "%26")
         xml_parts.append(
             f"  <url>\n"
-            f"    <loc>{BASE_URL}/search?package={pkg}&amp;ecosystem=PyPI</loc>\n"
+            f"    <loc>{BASE_URL}/search?package={safe_pkg}&amp;ecosystem=PyPI</loc>\n"
             f"    <lastmod>{now}</lastmod>\n"
             f"    <changefreq>weekly</changefreq>\n"
-            f"    <priority>0.6</priority>\n"
+            f"    <priority>0.7</priority>\n"
             f"  </url>"
         )
+
     xml_parts.append("</urlset>")
     response = make_response("\n".join(xml_parts))
     response.headers["Content-Type"] = "application/xml; charset=utf-8"
