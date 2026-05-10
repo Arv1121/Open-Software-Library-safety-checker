@@ -529,7 +529,7 @@ def fetch_cargo_meta(package):
     """Fetch package metadata from crates.io."""
     try:
         r = requests.get(CARGO_API.format(package=package), timeout=10,
-                         headers={"User-Agent": "library-safety-checker/1.0"})
+                         headers={"User-Agent": "oss-security-hub/1.0"})
         if r.status_code != 200:
             return None
         data = r.json()
