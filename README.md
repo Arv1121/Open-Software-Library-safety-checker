@@ -83,12 +83,3 @@ Please open an issue first to discuss major changes.
 
 This project is licensed under the MIT License.
 Code
-
-
----
-
-This README gives your repo a **professional, structured look** and matches the files you listed. You can extend the **Security Checks** section with details about your detection logic once it’s fully implemented.  
-
-Would you like me to also add **badges** (Python version, Flask, Railway deploy, GitHub Pages status) at the top of the README for extra polish?
-
-
