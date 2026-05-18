@@ -9,19 +9,39 @@ const ThemeManager = (() => {
   const KEY = 'lsc-theme';
   const btn = document.getElementById('theme-toggle');
 
-  function apply(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
+  function apply(theme, animate = false) {
+    const root = document.documentElement;
+
+    if (animate) {
+      // Brief transition class for smooth cross-fade
+      root.style.transition = 'background-color 0.3s cubic-bezier(0.4,0,0.2,1), color 0.3s cubic-bezier(0.4,0,0.2,1)';
+      setTimeout(() => { root.style.transition = ''; }, 350);
+    }
+
+    root.setAttribute('data-theme', theme);
     localStorage.setItem(KEY, theme);
-    if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+
+    if (btn) {
+      btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+      btn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    }
   }
 
   function init() {
     const saved = localStorage.getItem(KEY) ||
       (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    apply(saved);
+    apply(saved, false);
+
     if (btn) btn.addEventListener('click', () => {
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      apply(current === 'dark' ? 'light' : 'dark');
+      apply(current === 'dark' ? 'light' : 'dark', true);
+    });
+
+    // Respond to OS-level theme changes when no preference is saved
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+      if (!localStorage.getItem(KEY)) {
+        apply(e.matches ? 'light' : 'dark', true);
+      }
     });
   }
 

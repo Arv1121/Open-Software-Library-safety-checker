@@ -109,7 +109,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   {% block extra_head %}{% endblock %}
 </head>
-<body class="animated-bg text-white min-h-screen flex flex-col">
+<body class="animated-bg min-h-screen flex flex-col" style="color: var(--text-primary);">
   <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MXD4BX5N"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -138,7 +138,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           <span id="compare-badge"
             class="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-xs rounded-full items-center justify-center font-bold hidden">0</span>
         </a>
-        <button id="theme-toggle" title="Toggle theme" aria-label="Toggle dark/light mode">🌙</button>
+        <button id="theme-toggle" title="Toggle theme" aria-label="Toggle dark/light mode" class="shrink-0">🌙</button>
       </div>
     </div>
   </nav>
