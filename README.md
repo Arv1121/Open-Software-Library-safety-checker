@@ -3,8 +3,6 @@
 A lightweight **Flask-based web application** for analyzing and visualizing the safety of open-source libraries.  
 This project helps developers quickly identify risks, track vulnerabilities, and improve the security posture of their dependencies.
 
----
-
 ## 🚀 Features
 - **Minimal Flask backend** for serving results and handling requests.
 - **Responsive UI** with improved light mode theme (templates + static assets).
